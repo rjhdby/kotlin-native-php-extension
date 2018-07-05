@@ -15,16 +15,18 @@ Can't
 3. Extension constants
 ## Files
 
+Core files
 ```
-# Core files
 dsl.kt         extension DSL
 generator.kr   C source and config.m4 generator
 konfigure.def  reserved for future use
- 
-# Work files
-konfigure.kt   Write your DSL of PHP extension here
 konfigure.sh   Shell script for build extension.
+```
+Work files
+```
+konfigure.kt   Write your DSL of PHP extension here
 example.kt     Extension functions
+./tests/*      .phpt tests for example extension
 ```
 
 ## Prerequisites
