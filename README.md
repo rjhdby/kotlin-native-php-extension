@@ -64,7 +64,7 @@ Second one is `extension_name.kt`, where you write functions of your extension.
 
 Let's make `example` extension with three functions.
 
-First, make file `example.kt`, that contains realization of those functions.
+##### First, make file `example.kt`, that contains realization of those functions.
 
 ```kotlin
 fun hello(name: String) = "Hello $name!!!\n"
@@ -81,7 +81,7 @@ Second function receive `String` and return nothing (`NULL` by default).
 And third function receive `Double` and return `Double`.
 
 
-Second, write DSL with description of extension.
+##### Second, write DSL with description of extension.
 
 ```kotlin
 import php.extension.dsl.*
