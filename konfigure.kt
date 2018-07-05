@@ -1,7 +1,7 @@
 import php.extension.dsl.*
 
 fun main(args: Array<String>) {
-    extension("test", "0.1") {
+    extension("example", "0.1") {
         function("hello") {
             arg(ArgumentType.STRING, "name")
             returnType = ArgumentType.STRING

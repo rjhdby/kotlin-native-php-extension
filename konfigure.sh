@@ -34,15 +34,7 @@ configure(){
     ./configure  --with-php-config=$PHP_BIN/php-config
 }
 
-test(){
-    $PHP_BIN/php -dextension=./modules/$NAME.so -r "echo hello('JoE');"
-    $PHP_BIN/php -dextension=./modules/$NAME.so -r "echo helloWorld();"
-    $PHP_BIN/php -dextension=./modules/$NAME.so -r "echo multiple2(10).PHP_EOL;"
-}
-
-
-
-if [ "$1" = "compile" ]
+if [ ! "$1" = "kt" ]
 then
 ## interop
     konfigure
@@ -51,8 +43,9 @@ then
     configure
 fi
 
-NAME=test
-
 make
 
-test
+if [ ! "$1" = "kt" ]
+then
+    echo "n" | make test -s
+fi
