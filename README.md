@@ -4,6 +4,15 @@ PHP version >= 7.0
 
 Linux
 
+## Scope
+Can
+1. Create functions
+2. `long(php int)`, `double(php float)`, `string` and `null` arguments and return value
+
+Can't
+1. Arguments by reference
+2. Arrays, classes, boolean, resources, mixed, callable as arguments or return value
+3. Extension constants
 ## Files
 
 ```
