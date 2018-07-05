@@ -101,7 +101,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-Third, just run `./konfigure.sh`.
+##### Third, just run `./konfigure.sh`.
 
 If no errors occuried then `example.so` will be created inside `./modules` directory.
 
