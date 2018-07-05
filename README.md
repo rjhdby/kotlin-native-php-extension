@@ -1,4 +1,4 @@
-# PHP extension generator with Kotlin Native
+# Kotlin Native PHP extension generator
 
 PHP version >= 7.0
 
