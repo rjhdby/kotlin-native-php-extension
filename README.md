@@ -36,6 +36,7 @@ example.kt     Extension functions
 3. Change `PHP_HOME` and `KOTLIN_HOME` variables in `konfigure.sh`
 
    `PHP_HOME` must point at home PHP directory, where located `./bin` and `./include` directories
+
    `KOTLIN_HOME` must point at directory, where located `kotlinc` binary
 
    example:
@@ -55,6 +56,7 @@ example.kt     Extension functions
 Extension consist of two files.
 
 First one is `konfigure.kt`, where you describe your extension with DSL.
+
 Second one is `extension_name.kt`, where you write functions of your extension.
 
 > NOTE! `extension_name` must be equals to name of your extension described in `konfigure.kt`.
