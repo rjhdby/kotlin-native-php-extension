@@ -11,8 +11,6 @@ konfigure(){
     rm ./konfigure.kexe
 }
 
-# TODO work with zval (array, mixed, resource, object), zend_bool, zend_class_entry, zend_fcall_info
-
 interop(){
     $KOTLIN_HOME/cinterop -def konfigure.def -o ${NAME}_int \
            -copt -I$PHP_LIB \
@@ -34,18 +32,14 @@ configure(){
     ./configure  --with-php-config=$PHP_BIN/php-config
 }
 
+# interop # TODO work with zval (array, mixed, resource, object), zend_bool, zend_class_entry, zend_fcall_info
+konfigure
+
 if [ ! "$1" = "kt" ]
 then
-## interop
-    konfigure
     compile
     phpize
     configure
-fi
-
-make
-
-if [ ! "$1" = "kt" ]
-then
+    make
     echo "n" | make test -s
 fi
