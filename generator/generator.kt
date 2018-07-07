@@ -13,6 +13,7 @@ object Generator {
         this.ext = ext;
         generateM4()
         generateC()
+        generateConstantsKt()
         return ext.name
     }
 
@@ -35,6 +36,19 @@ if test "${'$'}PHP_${ext.name.toUpperCase()}" != "no"; then
     PHP_NEW_EXTENSION(${ext.name}, ${ext.name}.c, ${'$'}ext_shared)
 fi
 """
+
+    private fun generateConstantsKt() {
+        val file = fopen("${ext.name}_generated_constants.kt", "wt")
+        try {
+            fputs(tkConstantsBlock(), file)
+        } finally {
+            fclose(file)
+        }
+    }
+
+    private fun tkConstantsBlock() = ext.constants
+            .map { "const val ${it.name} = ${it.getValue()}" }
+            .joinToString("\n");
 
     private fun generateC() {
         val file = fopen("${ext.name}.c", "wt")

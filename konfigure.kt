@@ -2,6 +2,7 @@ import php.extension.dsl.*
 
 val dsl = extension("example", "0.1") {
     constant("EXAMPLE_WORLD", "World")
+    constant("EXAMPLE_LONG", 10L)
     function("hello") {
         arg(ArgumentType.STRING, "name")
         returnType = ArgumentType.STRING

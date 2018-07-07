@@ -54,9 +54,9 @@ class Constant(val name: String) {
                 type = ArgumentType.STRING
                 stringVal = value
             }
-            is Long -> {
+            is Long, is Int -> {
                 type = ArgumentType.LONG
-                longVal = value
+                longVal = value as Long
             }
             is Double -> {
                 type = ArgumentType.DOUBLE

@@ -4,6 +4,18 @@ PHP version >= 7.0
 
 Linux
 
+## How it works
+You describe PHP extension by provided DSL and run build script.
+
+Build script do:
+1. Compile and run code-generator utility
+2. Generate template `.c` file for PHP extension
+3. Generate `config.m4` file for `autoconf`
+4. Bind Kotlin function to php functions calls
+5. Generate `.kt` file with declared constants
+6. Compile static library from `.kt` sources
+7. Run `phpize`, `configure` and `make` to produce shared PHP library from generated `.c` file and the resultant Kotlin static library
+
 ## Scope
 
 Can
@@ -63,7 +75,7 @@ Let's make `example` extension with three functions.
 ```kotlin
 fun hello(name: String) = "Hello $name!!!\n"
 
-fun helloWorld() = println("Hello World!!!")
+fun helloWorld() = println("Hello $EXAMPLE_WORLD!!!")
 
 fun multiple2(num: Double) = num * 2
 ```
@@ -97,9 +109,9 @@ fun main(args: Array<String>) {
 }
 ```
 
-> NOTE! Your `.kt` files MUST contains functions with names equals to described by DSL.
+> NOTE! Your `.kt` files MUST contains functions with names equals to described by DSL. Also they MUST receive all described arguments of corresponding types in described order.
 
-> NOTE! You can't access created constants from Kotlin code
+> NOTE! Kotlin constants will be generated automatically. Do not declare them in `.kt` files.
 
 #### Third, just run `./konfigure.sh`.
 
