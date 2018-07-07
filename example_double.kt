@@ -1,0 +1,1 @@
+fun multiple2(num: Double) = num * 2
