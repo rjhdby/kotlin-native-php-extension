@@ -1,15 +1,16 @@
 import php.extension.dsl.*
 
-fun main(args: Array<String>) {
-    extension("example", "0.1") {
-        function("hello") {
-            arg(ArgumentType.STRING, "name")
-            returnType = ArgumentType.STRING
-        }
-        function("helloWorld")
-        function("multiple2") {
-            arg(ArgumentType.DOUBLE, "number")
-            returnType = ArgumentType.DOUBLE
-        }
-    }.make()
+val dsl = extension("example", "0.1") {
+    constant("EXAMPLE_WORLD", "World")
+    function("hello") {
+        arg(ArgumentType.STRING, "name")
+        returnType = ArgumentType.STRING
+    }
+    function("helloWorld")
+    function("multiple2") {
+        arg(ArgumentType.DOUBLE, "number")
+        returnType = ArgumentType.DOUBLE
+    }
 }
+
+fun main(args: Array<String>) = dsl.make()

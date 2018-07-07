@@ -5,28 +5,25 @@ PHP version >= 7.0
 Linux
 
 ## Scope
+
 Can
 1. Create functions
 2. `long(php int)`, `double(php float)`, `string` and `null` arguments and return value
+3. Extension constants
 
 Can't
 1. Arguments by reference
 2. Arrays, classes, boolean, resources, mixed, callable as arguments or return value
-3. Extension constants
+
 ## Files
 
-Core files
 ```
-dsl.kt         extension DSL
-generator.kr   C source and config.m4 generator
-konfigure.def  reserved for future use
-konfigure.sh   Shell script for build extension.
-```
-Work files
-```
-konfigure.kt   Write your DSL of PHP extension here
-example.kt     Extension functions
-./tests/*      .phpt tests for example extension
+./generator/*       Codegenerator
+./tests/*           .phpt tests for example extension
+./konfigure.sh      Shell script for build extension.
+konfigure.kt        Write your DSL of PHP extension here
+example_double.kt   Example extension functions
+example_strings.kt  Example extension functions
 ```
 
 ## Prerequisites
@@ -53,18 +50,15 @@ example.kt     Extension functions
 
 ## Writing extension
 
-Extension consist of two files.
+Extension consist of two or mode `.kt` files.
 
-First one is `konfigure.kt`, where you describe your extension with DSL.
+Mandatory one is `konfigure.kt`, where you describe your extension with DSL.
 
-Second one is `extension_name.kt`, where you write functions of your extension.
-
-> NOTE! `extension_name` must be equals to name of your extension described in `konfigure.kt`.
-
+All others contains your extension logic.
 
 Let's make `example` extension with three functions.
 
-##### First, make file `example.kt`, that contains realization of those functions.
+#### First, make file `example.kt`, that contains realization of those functions.
 
 ```kotlin
 fun hello(name: String) = "Hello $name!!!\n"
@@ -78,16 +72,18 @@ First function receive `String` and return `String`.
 
 Second function receive `String` and return nothing (`NULL` by default).
 
-And third function receive `Double` and return `Double`.
+Third function receive `Double` and return `Double`.
 
+Also let's add string constant `EXAMPLE_WORLD="World"`
 
-##### Second, write DSL with description of extension.
+#### Second, write DSL with description of extension.
 
 ```kotlin
 import php.extension.dsl.*
 
 fun main(args: Array<String>) {
     extension("example", "0.1") {
+        constant("EXAMPLE_WORLD", "World")
         function("hello") {
             arg(ArgumentType.STRING, "name")
             returnType = ArgumentType.STRING
@@ -101,7 +97,11 @@ fun main(args: Array<String>) {
 }
 ```
 
-##### Third, just run `./konfigure.sh`.
+> NOTE! Your `.kt` files MUST contains functions with names equals to described by DSL.
+
+> NOTE! You can't access created constants from Kotlin code
+
+#### Third, just run `./konfigure.sh`.
 
 If no errors occuried then `example.so` will be created inside `./modules` directory.
 
@@ -109,10 +109,22 @@ If you does not want run `phpize`, `configure` and `make` after generation of C-
 
 ## DSL description
 
+#### extension(name:String, version:String) { functions and constants }
+
+#### constant(name:String, value:Any)
+value must be `Long`, `Double` or `String`. All other types will be silently dropped.
+
+#### function(name:String) {agruments and return value}
+By default return type is `ArgumentType.NULL`
+
+You may change return type by assignment `returnType = ArgumentType.STRING`
+
+#### arg(type:ArgumentType, name:String) { }
+
+## Currently supported argument types
+```kotlin
+ArgumentType.STRING;
+enum class ArgumentType(val code: String) {
+    ("s"), LONG("l"), DOUBLE("d"), NULL("")
+}
 ```
-extension(extension_name:String, extension_version:String) { functions }
-
-function(function_name:String) {arguments and return value}
-
-arg(argument_type:ArgumentType, argument_name:String) { reserved for future use }
-``` 

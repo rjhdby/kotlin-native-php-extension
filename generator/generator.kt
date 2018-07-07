@@ -44,6 +44,7 @@ fi
             fputs(funcDeclarationBlock(), file)
             fputs(funcEntryBlock(), file)
             fputs(moduleEntryBlock(), file)
+            fputs(minitBlock(), file)
             fputs(funcDefinitionBlock(), file)
         } finally {
             fclose(file)
@@ -73,13 +74,15 @@ static zend_function_entry ${ext.name}_functions[] = {
             .joinToString("\n    ")
 
     private fun moduleEntryBlock() = """
+PHP_MINIT_FUNCTION(${ext.name});
+
 zend_module_entry ${ext.name}_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
         STANDARD_MODULE_HEADER,
 #endif
         "${ext.name}",
         ${ext.name}_functions,
-        NULL,
+        PHP_MINIT(${ext.name}),
         NULL,
         NULL,
         NULL,
@@ -113,15 +116,15 @@ PHP_FUNCTION(${func.name}){
         }
     }.joinToString("\n    ")
 
-    fun parserLineIfNeeded(args: List<Argument>) = if (args.size != 0) """
+    private fun parserLineIfNeeded(args: List<Argument>) = if (args.size != 0) """
 if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "${argsString(args)}", ${parseArguments(args)}) != SUCCESS) {
     return;
 }
 """ else ""
 
-    fun argsString(args: List<Argument>) = args.map { it.type.code }.joinToString("")
+    private fun argsString(args: List<Argument>) = args.map { it.type.code }.joinToString("")
 
-    fun parseArguments(args: List<Argument>) = args.map {
+    private fun parseArguments(args: List<Argument>) = args.map {
         when (it.type) {
             ArgumentType.LONG, ArgumentType.DOUBLE -> "&${it.name}"
             ArgumentType.STRING -> "&${it.name}, &${it.name}_len"
@@ -136,12 +139,32 @@ if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "${argsString(args)}", ${pa
         ArgumentType.NULL -> "${callString(func)};\n    RETURN_NULL()"
     }
 
-    fun callString(func: Function) = "${ext.name}_kt_symbols()->kotlin.root.${func.name}(${callArguments(func.arguments)})"
+    private fun callString(func: Function) = "${ext.name}_kt_symbols()->kotlin.root.${func.name}(${callArguments(func.arguments)})"
 
-    fun callArguments(args: List<Argument>) = args.map {
+    private fun callArguments(args: List<Argument>) = args.map {
         when (it.type) {
             ArgumentType.NULL -> ""
             else -> "${it.name}"
         }
     }.joinToString(", ")
+
+    private fun minitBlock() = """
+PHP_MINIT_FUNCTION(${ext.name})
+{
+    ${constantsBlock()}
+    return SUCCESS;
+}
+"""
+
+    private fun constantsBlock() = ext.constants
+            .filterNot { it.type == ArgumentType.NULL }
+            .map { "${constantTypeDefinition(it)}(\"${it.name}\", ${it.getValue()}, CONST_CS|CONST_PERSISTENT);" }
+            .joinToString("\n    ")
+
+    private fun constantTypeDefinition(const: Constant) = when (const.type) {
+        ArgumentType.LONG -> "REGISTER_LONG_CONSTANT"
+        ArgumentType.DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
+        ArgumentType.STRING -> "REGISTER_STRING_CONSTANT"
+        ArgumentType.NULL -> "//"
+    }
 }
