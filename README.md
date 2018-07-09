@@ -19,13 +19,14 @@ Build script do:
 ## Scope
 
 Can
-1. Create functions
-2. `long(php int)`, `double(php float)`, `string` and `null` arguments and return value
+1. Functions with
+2. Supported arguments types: `long(php int)`, `double(php float)`, `string`, `boolean` (and `null` for return value)
+2. Optional arguments
 3. Extension constants
 
 Can't
 1. Arguments by reference
-2. Arrays, classes, boolean, resources, mixed, callable as arguments or return value
+2. Arrays, classes, resources, mixed, callable as arguments or return value
 
 ## Files
 
@@ -73,12 +74,14 @@ Let's make `example` extension with three functions.
 #### First, make file `example.kt`, that contains realization of those functions.
 
 ```kotlin
-fun hello(name: String) = "Hello $name!!!\n"
+fun hello(name: String, lang: String?) = "${if (lang ?: "" == "") HELLO_EN else lang} $name!!!\n"
 
 fun helloWorld() = println("Hello $EXAMPLE_WORLD!!!")
 
 fun multiple2(num: Double) = num * 2
 ```
+
+> NOTE! In current version of KN have a bug with unitialized `char *`. Because of this, you must handle an empty string instead of null.
 
 First function receive `String` and return `String`.
 
@@ -93,25 +96,34 @@ Also let's add string constant `EXAMPLE_WORLD="World"`
 ```kotlin
 import php.extension.dsl.*
 
-fun main(args: Array<String>) {
-    extension("example", "0.1") {
-        constant("EXAMPLE_WORLD", "World")
-        function("hello") {
-            arg(ArgumentType.STRING, "name")
-            returnType = ArgumentType.STRING
-        }
-        function("helloWorld")
-        function("multiple2") {
-            arg(ArgumentType.DOUBLE, "number")
-            returnType = ArgumentType.DOUBLE
-        }
-    }.make()
+val dsl = extension("example", "0.1") {
+    constant("EXAMPLE_WORLD", "World")
+    constant("EXAMPLE_LONG", 10L)
+
+    constant("HELLO_EN", "Hello")
+    constant("HELLO_ES", "Hola")
+    constant("HELLO_RU", "Привет")
+
+    function("hello", ArgumentType.STRING) {
+        arg(ArgumentType.STRING, "name")
+        arg(ArgumentType.STRING, "lang", true)
+    }
+
+    function("helloWorld")
+
+    function("multiple2", ArgumentType.DOUBLE) {
+        arg(ArgumentType.DOUBLE, "number")
+    }
 }
+
+fun main(args: Array<String>) = dsl.make()
 ```
 
 > NOTE! Your `.kt` files MUST contains functions with names equals to described by DSL. Also they MUST receive all described arguments of corresponding types in described order.
 
 > NOTE! Kotlin constants will be generated automatically. Do not declare them in `.kt` files.
+
+> NOTE! After definition of optional arguments, all remains arguments also must be optional
 
 #### Third, just run `./konfigure.sh`.
 
@@ -126,17 +138,14 @@ If you does not want run `phpize`, `configure` and `make` after generation of C-
 #### constant(name:String, value:Any)
 value must be `Long`, `Double` or `String`. All other types will be silently dropped.
 
-#### function(name:String) {agruments and return value}
-By default return type is `ArgumentType.NULL`
+#### function(name:String, returnType:ArgumentType = ArgumentType.NULL) { agruments }
 
-You may change return type by assignment `returnType = ArgumentType.STRING`
-
-#### arg(type:ArgumentType, name:String) { }
+#### arg(type:ArgumentType, name:String, optional:Boolean = false)
 
 ## Currently supported argument types
 ```kotlin
 ArgumentType.STRING;
 enum class ArgumentType(val code: String) {
-    ("s"), LONG("l"), DOUBLE("d"), NULL("")
+    ("s"), LONG("l"), DOUBLE("d"), BOOL("b"), NULL("")
 }
 ```

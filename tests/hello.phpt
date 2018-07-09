@@ -1,7 +1,7 @@
 --TEST--
-hello($name) function test
+hello('JoE', HELLO_ES)
 --FILE--
 <?php
-echo hello('JoE');
+echo hello('JoE', HELLO_ES);
 --EXPECT--
-Hello JoE!!!
+Hola JoE!!!

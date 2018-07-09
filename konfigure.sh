@@ -5,8 +5,11 @@ PHP_HOME=/opt/rh/rh-php71/root/usr
 PHP_BIN=${PHP_HOME}/bin
 PHP_LIB=${PHP_HOME}/include/php
 
+GENERATOR_LIBS="./generator/php_constants.kt ./generator/dsl.kt ./generator/generator.kt"
+MAKE_LIBS="./generator/php_constants.kt"
+
 konfigure(){
-    ${KOTLIN_HOME}/kotlinc ./konfigure.kt ./generator/dsl.kt ./generator/generator.kt -o konfigure
+    ${KOTLIN_HOME}/kotlinc ./konfigure.kt ${GENERATOR_LIBS} -o konfigure
     NAME=`./konfigure.kexe`
 }
 
@@ -21,7 +24,7 @@ interop(){
 compile(){
     SOURCES=`ls ./*.kt`
     SOURCES=`echo ${SOURCES} | sed 's/.\/konfigure.kt//g'`
-    ${KOTLIN_HOME}/kotlinc ${SOURCES} -o ${NAME}_kt -opt -produce static
+    ${KOTLIN_HOME}/kotlinc ${SOURCES} ${MAKE_LIBS} -o ${NAME}_kt -opt -produce static
 # TODO interop "-l ${NAME}_int.klib"
 }
 
@@ -43,4 +46,5 @@ then
     configure
     make
     echo "n" | make test -s
+    echo "\n"
 fi

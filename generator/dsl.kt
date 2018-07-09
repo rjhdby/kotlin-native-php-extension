@@ -12,8 +12,8 @@ class Extension(val name: String, val version: String) {
     val functions = ArrayList<Function>()
     val constants = ArrayList<Constant>()
 
-    fun function(name: String, body: Function.() -> Unit = {}) {
-        val function = Function(name)
+    fun function(name: String, type: ArgumentType = ArgumentType.NULL, body: Function.() -> Unit = {}) {
+        val function = Function(name, type)
         function.body()
         functions.add(function)
     }
@@ -29,24 +29,30 @@ class Extension(val name: String, val version: String) {
     }
 }
 
-class Function(val name: String) {
+class Function(val name: String, val returnType: ArgumentType) {
     val arguments = ArrayList<Argument>()
-    var returnType = ArgumentType.NULL
+    var hasOptional = false
 
-    fun arg(type: ArgumentType, name: String, body: Argument.() -> Unit = {}) {
-        val arg = Argument(type, name)
-        arg.body()
+    fun arg(type: ArgumentType, name: String, optional: Boolean = false) {
+        val arg = Argument(type, name, optional)
+        if (optional && !hasOptional) {
+            hasOptional = true
+            arg.firstOptional = true;
+        }
         arguments.add(arg)
     }
 }
 
-class Argument(val type: ArgumentType, val name: String, val optional: Boolean = false)
+class Argument(val type: ArgumentType, val name: String, val optional: Boolean) {
+    var firstOptional = false;
+}
 
 class Constant(val name: String) {
     var type: ArgumentType = ArgumentType.NULL
     private var stringVal: String = ""
     private var longVal: Long = 0L
     private var doubleVal: Double = 0.0
+    private var boolVal: Boolean = false
 
     fun setValue(value: Any) {
         when (value) {
@@ -62,6 +68,10 @@ class Constant(val name: String) {
                 type = ArgumentType.DOUBLE
                 doubleVal = value
             }
+            is Boolean -> {
+                type = ArgumentType.BOOL
+                boolVal = value
+            }
             else -> type = ArgumentType.NULL
         }
     }
@@ -70,10 +80,11 @@ class Constant(val name: String) {
         ArgumentType.STRING -> "\"$stringVal\""
         ArgumentType.LONG -> "$longVal"
         ArgumentType.DOUBLE -> "$doubleVal"
+        ArgumentType.BOOL -> if (boolVal) "1" else "0"
         else -> ""
     }
 }
 
 enum class ArgumentType(val code: String) {
-    STRING("s"), LONG("l"), DOUBLE("d"), NULL("")
+    STRING("s"), LONG("l"), DOUBLE("d"), BOOL("b"), NULL("")
 }

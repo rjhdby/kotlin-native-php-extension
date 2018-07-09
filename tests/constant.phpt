@@ -1,5 +1,5 @@
 --TEST--
-hello(EXAMPLE_WORLD) function test
+hello(EXAMPLE_WORLD)
 --FILE--
 <?php
 echo hello(EXAMPLE_WORLD);

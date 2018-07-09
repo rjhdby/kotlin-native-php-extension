@@ -4,7 +4,6 @@ import platform.posix.*
 import php.extension.dsl.*
 
 //TODO work with zval (array, mixed, resource, object), zend_bool, zend_class_entry, zend_fcall_info
-//TODO REGISTER_LONG_CONSTANT
 
 object Generator {
     lateinit var ext: Extension;
@@ -123,24 +122,38 @@ PHP_FUNCTION(${func.name}){
 
     private fun argsVarsDeclaration(args: List<Argument>) = args.map {
         when (it.type) {
-            ArgumentType.LONG -> "long ${it.name};"
+            ArgumentType.LONG -> "zend_long ${it.name};"
             ArgumentType.DOUBLE -> "double ${it.name};"
-            ArgumentType.STRING -> "char *${it.name};\n    size_t ${it.name}_len;"
+            ArgumentType.STRING -> charDeclaration(it.name)
+            ArgumentType.BOOL -> "zend_bool ${it.name};"
             ArgumentType.NULL -> ""
         }
     }.joinToString("\n    ")
 
+    /*
+     * Nikolay Igotti [JB]
+     * it’s likely K/N  bug, in `CreateCStringFromString`, combined with different behavior
+     * of `strlen` with null arg. Pass “” for now, we will fix it.
+     */
+    private fun charDeclaration(name: String) = """
+    char *${name} = malloc(1);
+    ${name}[0] = '\0';
+    size_t ${name}_len=0;
+"""
+
     private fun parserLineIfNeeded(args: List<Argument>) = if (args.size != 0) """
-if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "${argsString(args)}", ${parseArguments(args)}) != SUCCESS) {
-    return;
-}
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "${argsString(args)}", ${parseArguments(args)}) == FAILURE) {
+        return;
+    }
 """ else ""
 
-    private fun argsString(args: List<Argument>) = args.map { it.type.code }.joinToString("")
+    private fun argsString(args: List<Argument>) = args
+            .map { (if (it.firstOptional) "|" else "") + it.type.code }
+            .joinToString("")
 
     private fun parseArguments(args: List<Argument>) = args.map {
         when (it.type) {
-            ArgumentType.LONG, ArgumentType.DOUBLE -> "&${it.name}"
+            ArgumentType.LONG, ArgumentType.DOUBLE, ArgumentType.BOOL -> "&${it.name}"
             ArgumentType.STRING -> "&${it.name}, &${it.name}_len"
             ArgumentType.NULL -> ""
         }
@@ -150,7 +163,8 @@ if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "${argsString(args)}", ${pa
         ArgumentType.LONG -> "RETURN_LONG(${callString(func)});"
         ArgumentType.DOUBLE -> "RETURN_DOUBLE(${callString(func)});"
         ArgumentType.STRING -> "RETURN_STRING(${callString(func)});"
-        ArgumentType.NULL -> "${callString(func)};\n    RETURN_NULL()"
+        ArgumentType.BOOL -> "RETURN_BOOL(${callString(func)});"
+        ArgumentType.NULL -> "${callString(func)};\n    RETURN_NULL();"
     }
 
     private fun callString(func: Function) = "${ext.name}_kt_symbols()->kotlin.root.${func.name}(${callArguments(func.arguments)})"
@@ -179,6 +193,7 @@ PHP_MINIT_FUNCTION(${ext.name})
         ArgumentType.LONG -> "REGISTER_LONG_CONSTANT"
         ArgumentType.DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
         ArgumentType.STRING -> "REGISTER_STRING_CONSTANT"
+        ArgumentType.BOOL -> "REGISTER_BOOL_CONSTANT"
         ArgumentType.NULL -> "//"
     }
 }

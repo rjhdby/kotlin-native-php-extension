@@ -3,15 +3,32 @@ import php.extension.dsl.*
 val dsl = extension("example", "0.1") {
     constant("EXAMPLE_WORLD", "World")
     constant("EXAMPLE_LONG", 10L)
-    function("hello") {
+
+    constant("HELLO_EN", "Hello")
+    constant("HELLO_ES", "Hola")
+    constant("HELLO_RU", "Привет")
+
+    constant("OK_HELLO", true)
+
+    function("hello", ArgumentType.STRING) {
         arg(ArgumentType.STRING, "name")
-        returnType = ArgumentType.STRING
+        arg(ArgumentType.STRING, "lang", true)
     }
-    function("helloWorld")
-    function("multiple2") {
+
+    function("helloWorld", ArgumentType.BOOL)
+
+    function("multiple2", ArgumentType.DOUBLE) {
         arg(ArgumentType.DOUBLE, "number")
-        returnType = ArgumentType.DOUBLE
     }
+
+    function("multiple2long", ArgumentType.LONG) {
+        arg(ArgumentType.LONG, "number")
+    }
+
+    function("helloOrNotHello") {
+        arg(ArgumentType.BOOL, "hello")
+    }
+
 }
 
 fun main(args: Array<String>) = dsl.make()

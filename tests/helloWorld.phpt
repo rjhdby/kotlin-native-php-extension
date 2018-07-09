@@ -1,7 +1,8 @@
 --TEST--
-helloWorld() function test
+helloWorld()
 --FILE--
 <?php
-helloWorld();
+echo helloWorld();
 --EXPECT--
 Hello World!!!
+1
