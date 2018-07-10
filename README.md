@@ -19,7 +19,7 @@ Build script do:
 ## Scope
 
 Can
-1. Functions with
+1. Functions
 2. Supported arguments types: `long(php int)`, `double(php float)`, `string`, `boolean` (and `null` for return value)
 2. Optional arguments
 3. Extension constants
@@ -27,6 +27,8 @@ Can
 Can't
 1. Arguments by reference
 2. Arrays, classes, resources, mixed, callable as arguments or return value
+3. INI-settings
+4. Call PHP API from Kotlin
 
 ## Files
 

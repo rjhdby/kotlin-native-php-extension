@@ -36,7 +36,7 @@ configure(){
     ./configure  --with-php-config=${PHP_BIN}/php-config
 }
 
-# interop # TODO work with zval (array, mixed, resource, object), zend_bool, zend_class_entry, zend_fcall_info
+# interop # TODO work with zval (array, mixed, resource, object), zend_class_entry, zend_fcall_info
 konfigure
 
 if [ ! "$1" = "kt" ]
