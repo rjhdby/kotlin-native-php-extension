@@ -5,7 +5,7 @@ PHP version >= 7.0
 Linux
 
 ## How it works
-You describe PHP extension by provided DSL and run build script.
+You describe PHP extension by provided DSL and run `make`.
 
 Build script do:
 1. Compile and run code-generator utility

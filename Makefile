@@ -4,12 +4,14 @@ PHP_HOME=/opt/rh/rh-php71/root/usr
 PHP_BIN=${PHP_HOME}/bin
 PHP_LIB=${PHP_HOME}/include/php
 
-GENERATOR_LIBS=./generator/php_constants.kt \
-./generator/dsl.kt \
+GENERATOR_LIBS=./generator/dsl.kt \
 ./generator/generator.kt \
-./generator/generator_templates.kt
+./generator/c_generator.kt \
+./generator/m4_generator.kt \
+./generator/kt_const_generator.kt \
+./generator/def_generator.kt
 
-MAKE_LIBS=./generator/php_constants.kt
+#MAKE_LIBS=./generator/php_constants.kt
 
 OUTPUT=./phpmodule
 
@@ -20,8 +22,10 @@ SOURCES=`ls ./*.kt | sed 's/.\/konfigure.kt//g'`
 KLIB_NAME=libphp
 KLIB=./${KLIB_NAME}.klib
 KEXE=./konfigure.kexe
+DEF=./php.def
 
 ARTEFACTS=${KEXE} \
+${DEF} \
 ./extension_constants_generated.kt \
 ${OUTPUT}/extension_kt_api.h \
 ${OUTPUT}/config.m4 \
@@ -34,7 +38,7 @@ prepare:
 	mkdir -p ${OUTPUT}
 	cp -pR ${TESTS} ${OUTPUT}/
 
-kotlin: interop make_generator generate compile
+kotlin: make_generator generate interop compile
 
 php:
 	cd ${OUTPUT};pwd
@@ -44,7 +48,7 @@ php:
 
 interop:
 ifneq ($(KLIB),$(wildcard $(KLIB)))
-	${KOTLIN_HOME}/cinterop -def ./generator/php.def -o ${KLIB_NAME} \
+	${KOTLIN_HOME}/cinterop -def ${DEF} -o ${KLIB_NAME} \
 -copt -I${PHP_LIB} \
 -copt -I${PHP_LIB}/main \
 -copt -I${PHP_LIB}/Zend \

@@ -11,4 +11,4 @@ fun helloWorld(): Boolean {
 
 fun helloOrNotHello(hello: Boolean) = println(if (hello) "Hello!" else "Nop!")
 
-fun getStringIni(name:String) = php_helper_ini_string(name.cstr)?.toKString()?:"WARRRRGGGGHHHHH"
+//fun getStringIni(name:String) = php_helper_ini_string(name.cstr)?.toKString()?:"WARRRRGGGGHHHHH"
