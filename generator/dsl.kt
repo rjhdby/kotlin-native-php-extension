@@ -11,6 +11,7 @@ fun extension(name: String, version: String, body: Extension.() -> Unit = {}): E
 class Extension(val name: String, val version: String) {
     val functions = ArrayList<Function>()
     val constants = ArrayList<Constant>()
+    val ini = ArrayList<Ini>()
 
     fun function(name: String, type: ArgumentType = ArgumentType.NULL, body: Function.() -> Unit = {}) {
         val function = Function(name, type)
@@ -24,8 +25,12 @@ class Extension(val name: String, val version: String) {
         constants.add(constant)
     }
 
+    fun ini(name: String, default: String) {
+        ini.add(Ini(name, default))
+    }
+
     fun make() {
-        print(Generator.generate(this))
+        Generator(this).generate()
     }
 }
 
@@ -84,6 +89,9 @@ class Constant(val name: String) {
         else -> ""
     }
 }
+
+class Ini(val name: String, val default: String)
+
 
 enum class ArgumentType(val code: String) {
     STRING("s"), LONG("l"), DOUBLE("d"), BOOL("b"), NULL("")

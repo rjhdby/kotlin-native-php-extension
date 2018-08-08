@@ -1,6 +1,7 @@
 import php.extension.dsl.*
 
 val dsl = extension("example", "0.1") {
+    ini("example.count","10")
     constant("EXAMPLE_WORLD", "World")
     constant("EXAMPLE_LONG", 10L)
 
@@ -29,6 +30,13 @@ val dsl = extension("example", "0.1") {
         arg(ArgumentType.BOOL, "hello")
     }
 
+    function("getIntIni", ArgumentType.LONG){
+        arg(ArgumentType.STRING, "name")
+    }
+
+    function("getStringIni", ArgumentType.STRING){
+        arg(ArgumentType.STRING, "name")
+    }
 }
 
 fun main(args: Array<String>) = dsl.make()

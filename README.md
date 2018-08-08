@@ -23,19 +23,20 @@ Can
 2. Supported arguments types: `long(php int)`, `double(php float)`, `string`, `boolean` (and `null` for return value)
 2. Optional arguments
 3. Extension constants
+3. Declare INI-entries
 
 Can't
 1. Arguments by reference
 2. Arrays, classes, resources, mixed, callable as arguments or return value
-3. INI-settings
+3. Use INI-settings
 4. Call PHP API from Kotlin
 
 ## Files
 
 ```
-./generator/*       Codegenerator
+./generator/*       Code generator
 ./tests/*           .phpt tests for example extension
-./konfigure.sh      Shell script for build extension.
+Makefile            Makefile
 konfigure.kt        Write your DSL of PHP extension here
 example_double.kt   Example extension functions
 example_strings.kt  Example extension functions
@@ -45,7 +46,7 @@ example_strings.kt  Example extension functions
 
 1. [Install KOTLINC compiler](https://kotlinlang.org/docs/tutorials/native/basic-kotlin-native-app.html)
 2. Install `php` and `php-devel` packages
-3. Change `PHP_HOME` and `KOTLIN_HOME` variables in `konfigure.sh`
+3. Change `PHP_HOME` and `KOTLIN_HOME` variables in `Makefile`
 
    `PHP_HOME` must point at home PHP directory, where located `./bin` and `./include` directories
 
@@ -53,14 +54,8 @@ example_strings.kt  Example extension functions
 
    example:
    ```sh
-   #!/bin/sh
    KOTLIN_HOME=/root/kotlin-native-linux-0.7.1/bin
    PHP_HOME=/opt/rh/rh-php71/root/usr
-   ```
-4. Mark `konfigure.kt` executable
-
-   ```sh
-   chmod ug+x ./konfigure.kt
    ```
 
 ## Writing extension
@@ -99,6 +94,8 @@ Also let's add string constant `EXAMPLE_WORLD="World"`
 import php.extension.dsl.*
 
 val dsl = extension("example", "0.1") {
+    ini("example.count","10")
+
     constant("EXAMPLE_WORLD", "World")
     constant("EXAMPLE_LONG", 10L)
 
@@ -127,15 +124,19 @@ fun main(args: Array<String>) = dsl.make()
 
 > NOTE! After definition of optional arguments, all remains arguments also must be optional
 
-#### Third, just run `./konfigure.sh`.
+#### Third, just run `make`.
 
 If no errors occuried then `example.so` will be created inside `./modules` directory.
 
 If you does not want run `phpize`, `configure` and `make` after generation of C-code, just use parameter `./konfigure.sh kt`.
 
+Don't forget to run `make test`.
+
 ## DSL description
 
 #### extension(name:String, version:String) { functions and constants }
+
+#### ini(name:String, value:String)
 
 #### constant(name:String, value:Any)
 value must be `Long`, `Double` or `String`. All other types will be silently dropped.

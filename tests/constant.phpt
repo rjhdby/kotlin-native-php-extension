@@ -1,7 +1,7 @@
 --TEST--
-hello(EXAMPLE_WORLD)
+Constants definition
 --FILE--
 <?php
-echo hello(EXAMPLE_WORLD);
+echo EXAMPLE_WORLD;
 --EXPECT--
-Hello World!!!
+World
