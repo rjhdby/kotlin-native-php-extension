@@ -23,13 +23,12 @@ Can
 2. Supported arguments types: `long(php int)`, `double(php float)`, `string`, `boolean` (and `null` for return value)
 2. Optional arguments
 3. Extension constants
-3. Declare INI-entries
+3. Declare and read INI-entries as String
 
 Can't
 1. Arguments by reference
 2. Arrays, classes, resources, mixed, callable as arguments or return value
-3. Use INI-settings
-4. Call PHP API from Kotlin
+3. Call PHP API from Kotlin
 
 ## Files
 
@@ -144,6 +143,12 @@ value must be `Long`, `Double` or `String`. All other types will be silently dro
 #### function(name:String, returnType:ArgumentType = ArgumentType.NULL) { agruments }
 
 #### arg(type:ArgumentType, name:String, optional:Boolean = false)
+
+## Zend Api interop
+Mapping functions for internal zend api located in package `zend.api.mapper`
+
+Following functions are currently supported:
+- `getIniString(name: String): String`
 
 ## Currently supported argument types
 ```kotlin

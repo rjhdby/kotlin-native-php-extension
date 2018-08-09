@@ -1,6 +1,5 @@
 package php.extension.generator
 
-import platform.posix.*
 import php.extension.dsl.*
 
 class DefGenerator : FileGenerator {
@@ -25,7 +24,7 @@ const val defFileTemplate = """headers = php.h
 """
 
 const val iniHelper = """
-static inline int zend_helper_get_ini_{niceIni}() {
+static inline char* zend_helper_get_ini_{niceIni}() {
     return {macro}("{ini}");
 }
 """

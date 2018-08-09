@@ -1,7 +1,7 @@
 --TEST--
-echo getStringIni("example.count");
+echo iniValueFor("example.count").iniValueFor("example.name");
 --FILE--
 <?php
-echo getStringIni("example.count");
+echo iniValueFor("example.count").iniValueFor("example.name");
 --EXPECT--
-10
+10example

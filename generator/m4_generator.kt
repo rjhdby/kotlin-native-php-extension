@@ -1,6 +1,5 @@
 package php.extension.generator
 
-import platform.posix.*
 import php.extension.dsl.*
 
 class M4Generator : FileGenerator {

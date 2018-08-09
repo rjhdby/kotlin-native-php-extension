@@ -1,6 +1,5 @@
 package php.extension.generator
 
-import platform.posix.*
 import php.extension.dsl.*
 
 class KtConstGenerator : FileGenerator {

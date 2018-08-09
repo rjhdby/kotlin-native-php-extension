@@ -4,20 +4,14 @@ PHP_HOME=/opt/rh/rh-php71/root/usr
 PHP_BIN=${PHP_HOME}/bin
 PHP_LIB=${PHP_HOME}/include/php
 
-GENERATOR_LIBS=./generator/dsl.kt \
-./generator/generator.kt \
-./generator/c_generator.kt \
-./generator/m4_generator.kt \
-./generator/kt_const_generator.kt \
-./generator/def_generator.kt
-
-#MAKE_LIBS=./generator/php_constants.kt
+GENERATOR_LIBS=./generator/*.kt
 
 OUTPUT=./phpmodule
 
 TESTS=./tests
 
 SOURCES=`ls ./*.kt | sed 's/.\/konfigure.kt//g'`
+ZEND_INTEROP=./zend_interop/*.kt
 
 KLIB_NAME=libphp
 KLIB=./${KLIB_NAME}.klib
@@ -27,6 +21,7 @@ DEF=./php.def
 ARTEFACTS=${KEXE} \
 ${DEF} \
 ./extension_constants_generated.kt \
+./extension_ini_mapper_generated.kt \
 ${OUTPUT}/extension_kt_api.h \
 ${OUTPUT}/config.m4 \
 ${OUTPUT}/libextension_kt.a \
@@ -75,7 +70,7 @@ endif
 
 compile:
 ifneq (${OUTPUT}/libextension_kt.a,$(wildcard ${OUTPUT}/libextension_kt.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${MAKE_LIBS} -l ${KLIB} -o extension_kt
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} -l ${KLIB} -o extension_kt
 	mv ./extension_kt_api.h ${OUTPUT}/
 	mv ./libextension_kt.a ${OUTPUT}/
 else

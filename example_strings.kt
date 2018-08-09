@@ -1,6 +1,7 @@
 //stub package for php.h
 import php.*
-import kotlinx.cinterop.*
+//import kotlinx.cinterop.*
+import zend.api.mapper.*
 
 fun hello(name: String, lang: String?) = "${if (lang ?: "" == "") HELLO_EN else lang} $name!!!\n"
 
@@ -11,4 +12,4 @@ fun helloWorld(): Boolean {
 
 fun helloOrNotHello(hello: Boolean) = println(if (hello) "Hello!" else "Nop!")
 
-//fun getStringIni(name:String) = php_helper_ini_string(name.cstr)?.toKString()?:"WARRRRGGGGHHHHH"
+fun iniValueFor(name:String) = getIniString(name)

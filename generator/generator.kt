@@ -16,6 +16,7 @@ class Generator(val ext: Extension) {
         write(KtConstGenerator())
         write(CGenerator())
         write(DefGenerator())
+        write(IniMappingGenerator())
     }
 
     private fun write(generator: FileGenerator) {
