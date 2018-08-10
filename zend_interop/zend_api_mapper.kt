@@ -1,4 +1,4 @@
-package zend.api.mapper
+package zend.api.proxy
 
 import kotlinx.cinterop.*
 

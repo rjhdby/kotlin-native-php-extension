@@ -48,7 +48,7 @@ class Function(val name: String, val returnType: ArgumentType) {
     }
 }
 
-class Argument(val type: ArgumentType, val name: String, val optional: Boolean) {
+class Argument(val type: ArgumentType, val name: String, val isOptional: Boolean) {
     var firstOptional = false;
 }
 

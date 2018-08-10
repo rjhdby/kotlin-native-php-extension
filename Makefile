@@ -4,27 +4,29 @@ PHP_HOME=/opt/rh/rh-php71/root/usr
 PHP_BIN=${PHP_HOME}/bin
 PHP_LIB=${PHP_HOME}/include/php
 
-GENERATOR_LIBS=./generator/*.kt
+GENERATOR_FILES=./generator/*.kt
+ZEND_INTEROP_FILES=./zend_interop/*.kt
 
 OUTPUT=./phpmodule
 
 TESTS=./tests
 
-SOURCES=`ls ./*.kt | sed 's/.\/konfigure.kt//g'`
-ZEND_INTEROP=./zend_interop/*.kt
+SOURCES=`ls ./*.kt | sed 's/.\/extension.kt//g'`
 
+LIB_NAME=extension_kt
 KLIB_NAME=libphp
 KLIB=./${KLIB_NAME}.klib
-KEXE=./konfigure.kexe
+KEXE_NAME=extension
+KEXE=./${KEXE_NAME}.kexe
 DEF=./php.def
 
 ARTEFACTS=${KEXE} \
+${OUTPUT}/${LIB_NAME}_api.h \
+${OUTPUT}/lib${LIB_NAME}.a \
 ${DEF} \
 ./extension_constants_generated.kt \
 ./extension_ini_mapper_generated.kt \
-${OUTPUT}/extension_kt_api.h \
 ${OUTPUT}/config.m4 \
-${OUTPUT}/libextension_kt.a \
 ${OUTPUT}/extension.c
 
 all: prepare kotlin php
@@ -36,10 +38,11 @@ prepare:
 kotlin: make_generator generate interop compile
 
 php:
-	cd ${OUTPUT};pwd
+ifeq ($(OUTPUT),$(wildcard $(OUTPUT)))
 	cd ${OUTPUT};phpize
 	cd ${OUTPUT};./configure  --with-php-config=${PHP_BIN}/php-config
 	cd ${OUTPUT};make
+endif
 
 interop:
 ifneq ($(KLIB),$(wildcard $(KLIB)))
@@ -54,7 +57,7 @@ endif
 
 make_generator:
 ifneq ($(KEXE),$(wildcard $(KEXE)))
-	${KOTLIN_HOME}/kotlinc ./konfigure.kt ${GENERATOR_LIBS} -o konfigure
+	${KOTLIN_HOME}/kotlinc ./${KEXE_NAME}.kt ${GENERATOR_FILES} -o ${KEXE_NAME}
 else
 	@echo "Skip make_generator"
 endif
@@ -65,25 +68,29 @@ ifneq (${OUTPUT}/config.m4,$(wildcard ${OUTPUT}/config.m4))
 	mv ./config.m4 ${OUTPUT}/
 	mv ./extension.c ${OUTPUT}/
 else
-	@echo "Skip generate"
+	@echo "Skip generating"
 endif
 
 compile:
-ifneq (${OUTPUT}/libextension_kt.a,$(wildcard ${OUTPUT}/libextension_kt.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} -l ${KLIB} -o extension_kt
-	mv ./extension_kt_api.h ${OUTPUT}/
-	mv ./libextension_kt.a ${OUTPUT}/
+ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP_FILES} -l ${KLIB} -o ${LIB_NAME}
+	mv ./${LIB_NAME}_api.h ${OUTPUT}/
+	mv ./lib${LIB_NAME}.a ${OUTPUT}/
 else
-	echo "Skip compile"
+	@echo "Skip compiling"
 endif
 
 test:
+ifeq ($(OUTPUT)/Makefile,$(wildcard $(OUTPUT)/Makefile))
 	cd ${OUTPUT};echo "n" | make test -s
-	@echo "\n"
+	@echo "n"
+endif
 
 install:
+ifeq ($(OUTPUT)/Makefile,$(wildcard $(OUTPUT)/Makefile))
 	cd ${OUTPUT}
 	make install
+endif
 
 clean: clean_keep_interop
 	rm ${KLIB}

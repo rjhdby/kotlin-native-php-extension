@@ -35,8 +35,9 @@ Can't
 ```
 ./generator/*       Code generator
 ./tests/*           .phpt tests for example extension
+./zend_interop/*    Zend macro interop classes
 Makefile            Makefile
-konfigure.kt        Write your DSL of PHP extension here
+extension.kt        Write your DSL of PHP extension here
 example_double.kt   Example extension functions
 example_strings.kt  Example extension functions
 ```
@@ -61,7 +62,7 @@ example_strings.kt  Example extension functions
 
 Extension consist of two or mode `.kt` files.
 
-Mandatory one is `konfigure.kt`, where you describe your extension with DSL.
+Mandatory one is `extension.kt`, where you describe your extension with DSL.
 
 All others contains your extension logic.
 
@@ -85,7 +86,7 @@ Second function receive `String` and return nothing (`NULL` by default).
 
 Third function receive `Double` and return `Double`.
 
-Also let's add string constant `EXAMPLE_WORLD="World"`
+Also let's add som constants and INI-setting.
 
 #### Second, write DSL with description of extension.
 
@@ -119,41 +120,70 @@ fun main(args: Array<String>) = dsl.make()
 
 > NOTE! Your `.kt` files MUST contains functions with names equals to described by DSL. Also they MUST receive all described arguments of corresponding types in described order.
 
-> NOTE! Kotlin constants will be generated automatically. Do not declare them in `.kt` files.
-
-> NOTE! After definition of optional arguments, all remains arguments also must be optional
+> NOTE! Corresponding K/N constants will generated automatically. Do not declare them in `.kt` files.
 
 #### Third, just run `make`.
 
 If no errors occuried then `example.so` will be created inside `./modules` directory.
 
-If you does not want run `phpize`, `configure` and `make` after generation of C-code, just use parameter `./konfigure.sh kt`.
+If you does not want run `phpize`, `configure` and `make` after generation of C-code, just use parameter `make kotlin`.
 
 Don't forget to run `make test`.
 
 ## DSL description
 
-#### extension(name:String, version:String) { functions and constants }
-
-#### ini(name:String, value:String)
-
-#### constant(name:String, value:Any)
-value must be `Long`, `Double` or `String`. All other types will be silently dropped.
-
-#### function(name:String, returnType:ArgumentType = ArgumentType.NULL) { agruments }
-
-#### arg(type:ArgumentType, name:String, optional:Boolean = false)
-
-## Zend Api interop
-Mapping functions for internal zend api located in package `zend.api.mapper`
-
-Following functions are currently supported:
-- `getIniString(name: String): String`
-
-## Currently supported argument types
-```kotlin
-ArgumentType.STRING;
-enum class ArgumentType(val code: String) {
-    ("s"), LONG("l"), DOUBLE("d"), BOOL("b"), NULL("")
+```
+extension(name, version){
+    ini(name, defaultValue)
+    ...
+    externalIni(name)
+    ...
+    constant(name, value)
+    ...
+    function(name, returnType){
+        arg(type, name [, isOptional = false])
+    }
+    ...
 }
 ```
+
+|node|parameter|type|note|
+|---|---|---|---|
+|`extension`|
+||`name`|`String`|
+||`version`|`String`|
+|`ini`|||Extension INI-setting
+||`name`|`String`|
+||`value`|`String`|
+|`externalIni`|||INI-setting that do not related to your extension, but you need it to use inside them. This needed for creation proxy retriever function.
+||`name`|`String`|
+|`constant`|
+||`name`|`String`|
+||`value`|`Any`|String, Long (or Int), Double and Boolean will be converted to corresponding PHP types. All other will be silently dropped|
+|`function`|
+||`name`|`String`|Name of resulting PHP-function. Note that you MUST provide corresponding K/N function with exact same name|
+||`returnType`|`ArgumentType`|Optional return type. By default `ArgumentType.NULL`
+|`arg`|||Note that argument addition order is important. After adding first optional argument, all arguments below MUST be optional
+||`type`|`ArgumentType`|
+||`name`|`String`|
+||`isOptional`|`Boolean`|Optional flag decides that argument is optional. By default `FALSE`
+
+## enum class ArgumentType
+|ArgumentType|PHP-type|
+|---|---|
+|`STRING`|`string`|
+|`LONG`|`int`|
+|`DOUBLE`|`float`/`double`|
+|`BOOL`|`boolean`|
+|`NULL`|`null`|
+
+## Zend Api macro interop
+Proxy functions for zend api macro located in package `zend.api.proxy`
+
+Following functions are currently supported
+
+|macro|proxy function|note|
+|:---|:---|:---|
+|**INI_STR&nbsp;(name)**|**getIniString&nbsp;(name:&nbsp;String):&nbsp;String**|You can retrieve only those INI-settings that described by DSL directives `ini` and `externalIni`|
+
+
