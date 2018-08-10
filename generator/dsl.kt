@@ -93,6 +93,6 @@ class Constant(val name: String) {
 class Ini(val name: String, val default: String)  //TODO typed INI
 
 
-enum class ArgumentType(val code: String) {
-    STRING("s"), LONG("l"), DOUBLE("d"), BOOL("b"), NULL("")
+enum class ArgumentType {
+    STRING, LONG, DOUBLE, BOOL, NULL
 }
