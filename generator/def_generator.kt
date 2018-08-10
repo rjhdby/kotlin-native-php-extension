@@ -20,6 +20,10 @@ const val defFileTemplate = """headers = php.h
 
 ---
 
+static inline zend_uchar zend_helper_get_arg_type(zval *z_value) {
+    return zval_get_type(z_value);
+}
+
 {iniHelpers}
 """
 

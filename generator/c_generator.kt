@@ -57,13 +57,13 @@ class CGenerator : FileGenerator {
 
     private fun callArguments(args: List<Argument>) = args.joinToString(", ") {
         when (it.type) {
-            ArgumentType.NULL -> ""
+            ArgumentType.PHP_NULL -> ""
             else -> "${it.name}"
         }
     }
 
     private fun constantsBlock(constants: List<Constant>) = constants
-            .filterNot { it.type == ArgumentType.NULL }
+            .filterNot { it.type == ArgumentType.PHP_NULL }
             .joinToString("\n    ") {
                 cConstEntry.fill(
                         "type" to CTmpl.constantTypeDefinition(it),
@@ -172,36 +172,47 @@ const val argsParserNew = """
 
 object CTmpl {
     fun varDeclaration(type: ArgumentType, name: String) = when (type) {
-        ArgumentType.LONG -> "zend_long ${name};"
-        ArgumentType.DOUBLE -> "double ${name};"
-        ArgumentType.STRING -> charDeclaration.fill("name" to name)
-        ArgumentType.BOOL -> "zend_bool ${name};"
-        ArgumentType.NULL -> ""
+        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "zend_long ${name};"
+        ArgumentType.PHP_DOUBLE -> "double ${name};"
+        ArgumentType.PHP_STRING -> charDeclaration.fill("name" to name)
+        ArgumentType.PHP_BOOL -> "zend_bool ${name};"
+        ArgumentType.PHP_NULL -> ""
+        ArgumentType.PHP_MIXED -> "zval * ${name};"
     }
 
     fun constantTypeDefinition(const: Constant) = when (const.type) {
-        ArgumentType.LONG -> "REGISTER_LONG_CONSTANT"
-        ArgumentType.DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
-        ArgumentType.STRING -> "REGISTER_STRING_CONSTANT"
-        ArgumentType.BOOL -> "REGISTER_BOOL_CONSTANT"
-        ArgumentType.NULL -> "//"
+        ArgumentType.PHP_LONG -> "REGISTER_LONG_CONSTANT"
+        ArgumentType.PHP_DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
+        ArgumentType.PHP_STRING -> "REGISTER_STRING_CONSTANT"
+        ArgumentType.PHP_BOOL -> "REGISTER_BOOL_CONSTANT"
+        else -> ""
+        /* can't use for constants
+        ArgumentType.PHP_MIXED
+        ArgumentType.PHP_NULL
+        */
     }
 
     fun functionReturn(type: ArgumentType, call: String) = when (type) {
-        ArgumentType.LONG -> "RETURN_LONG(${call});"
-        ArgumentType.DOUBLE -> "RETURN_DOUBLE(${call});"
-        ArgumentType.STRING -> "RETURN_STRING(${call});"
-        ArgumentType.BOOL -> "RETURN_BOOL(${call});"
-        ArgumentType.NULL -> "${call};\n    RETURN_NULL();"
+        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "RETURN_LONG(${call});"
+        ArgumentType.PHP_DOUBLE -> "RETURN_DOUBLE(${call});"
+        ArgumentType.PHP_STRING -> "RETURN_STRING(${call});"
+        ArgumentType.PHP_BOOL -> "RETURN_BOOL(${call});"
+        ArgumentType.PHP_NULL -> "${call};\n    RETURN_NULL();"
+        ArgumentType.PHP_MIXED -> "RETURN_ZVAL(${call},1,1);"
     }
 
     fun parserArgumentType(arg: Argument): String {
         val type = when (arg.type) {
-            ArgumentType.LONG -> "Z_PARAM_LONG(${arg.name})"
-            ArgumentType.DOUBLE -> "Z_PARAM_DOUBLE(${arg.name})"
-            ArgumentType.STRING -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
-            ArgumentType.BOOL -> "Z_PARAM_BOOL(${arg.name})"
-            ArgumentType.NULL -> ""
+            ArgumentType.PHP_LONG -> "Z_PARAM_LONG(${arg.name})"
+            ArgumentType.PHP_STRICT_LONG -> "Z_PARAM_STRICT_LONG(${arg.name})"
+            ArgumentType.PHP_DOUBLE -> "Z_PARAM_DOUBLE(${arg.name})"
+            ArgumentType.PHP_STRING -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
+            ArgumentType.PHP_BOOL -> "Z_PARAM_BOOL(${arg.name})"
+            ArgumentType.PHP_MIXED -> "Z_PARAM_ZVAL(${arg.name})"
+            else -> ""
+            /* can't use argument type
+            ArgumentType.PHP_NULL
+             */
         }
 
         return if (arg.firstOptional) "Z_PARAM_OPTIONAL\n    $type" else type

@@ -6,6 +6,7 @@ PHP_LIB=${PHP_HOME}/include/php
 
 GENERATOR_FILES=./generator/*.kt
 ZEND_INTEROP_FILES=./zend_interop/*.kt
+ARGUMENT_TYPES=./generator/argument_types.kt
 
 OUTPUT=./phpmodule
 
@@ -38,7 +39,7 @@ prepare:
 kotlin: make_generator generate interop compile
 
 php:
-ifeq ($(OUTPUT),$(wildcard $(OUTPUT)))
+ifeq (${OUTPUT}/config.m4,$(wildcard ${OUTPUT}/config.m4))
 	cd ${OUTPUT};phpize
 	cd ${OUTPUT};./configure  --with-php-config=${PHP_BIN}/php-config
 	cd ${OUTPUT};make
@@ -73,7 +74,7 @@ endif
 
 compile:
 ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP_FILES} -l ${KLIB} -o ${LIB_NAME}
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP_FILES} ${ARGUMENT_TYPES} -l ${KLIB} -o ${LIB_NAME}
 	mv ./${LIB_NAME}_api.h ${OUTPUT}/
 	mv ./lib${LIB_NAME}.a ${OUTPUT}/
 else

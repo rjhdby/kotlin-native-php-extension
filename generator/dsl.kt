@@ -13,7 +13,7 @@ class Extension(val name: String, val version: String) {
     val constants = ArrayList<Constant>()
     val ini = ArrayList<Ini>()
 
-    fun function(name: String, type: ArgumentType = ArgumentType.NULL, body: Function.() -> Unit = {}) {
+    fun function(name: String, type: ArgumentType = ArgumentType.PHP_NULL, body: Function.() -> Unit = {}) {
         val function = Function(name, type)
         function.body()
         functions.add(function)
@@ -53,7 +53,7 @@ class Argument(val type: ArgumentType, val name: String, val isOptional: Boolean
 }
 
 class Constant(val name: String) {
-    var type: ArgumentType = ArgumentType.NULL
+    var type: ArgumentType = ArgumentType.PHP_NULL
     private var stringVal: String = ""
     private var longVal: Long = 0L
     private var doubleVal: Double = 0.0
@@ -62,37 +62,32 @@ class Constant(val name: String) {
     fun setValue(value: Any) {
         when (value) {
             is String -> {
-                type = ArgumentType.STRING
+                type = ArgumentType.PHP_STRING
                 stringVal = value
             }
             is Long, is Int -> {
-                type = ArgumentType.LONG
+                type = ArgumentType.PHP_LONG
                 longVal = value as Long
             }
             is Double -> {
-                type = ArgumentType.DOUBLE
+                type = ArgumentType.PHP_DOUBLE
                 doubleVal = value
             }
             is Boolean -> {
-                type = ArgumentType.BOOL
+                type = ArgumentType.PHP_BOOL
                 boolVal = value
             }
-            else -> type = ArgumentType.NULL
+            else -> type = ArgumentType.PHP_NULL
         }
     }
 
     fun getValue() = when (type) {
-        ArgumentType.STRING -> "\"$stringVal\""
-        ArgumentType.LONG -> "$longVal"
-        ArgumentType.DOUBLE -> "$doubleVal"
-        ArgumentType.BOOL -> if (boolVal) "1" else "0"
+        ArgumentType.PHP_STRING -> "\"$stringVal\""
+        ArgumentType.PHP_LONG -> "$longVal"
+        ArgumentType.PHP_DOUBLE -> "$doubleVal"
+        ArgumentType.PHP_BOOL -> if (boolVal) "1" else "0"
         else -> ""
     }
 }
 
 class Ini(val name: String, val default: String)  //TODO typed INI
-
-
-enum class ArgumentType {
-    STRING, LONG, DOUBLE, BOOL, NULL
-}

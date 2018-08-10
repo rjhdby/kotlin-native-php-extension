@@ -13,31 +13,31 @@ val dsl = extension("example", "0.1") {
 
     constant("OK_HELLO", true)
 
-    function("hello", ArgumentType.STRING) {
-        arg(ArgumentType.STRING, "name")
-        arg(ArgumentType.STRING, "lang", true)
+    function("hello", ArgumentType.PHP_STRING) {
+        arg(ArgumentType.PHP_STRING, "name")
+        arg(ArgumentType.PHP_STRING, "lang", true)
     }
 
-    function("helloWorld", ArgumentType.BOOL)
+    function("helloWorld", ArgumentType.PHP_BOOL)
 
-    function("multiple2", ArgumentType.DOUBLE) {
-        arg(ArgumentType.DOUBLE, "number")
+    function("multiple2", ArgumentType.PHP_DOUBLE) {
+        arg(ArgumentType.PHP_DOUBLE, "number")
     }
 
-    function("multiple2long", ArgumentType.LONG) {
-        arg(ArgumentType.LONG, "number")
+    function("multiple2long", ArgumentType.PHP_LONG) {
+        arg(ArgumentType.PHP_LONG, "number")
     }
 
     function("helloOrNotHello") {
-        arg(ArgumentType.BOOL, "hello")
+        arg(ArgumentType.PHP_BOOL, "hello")
     }
 
-//    function("getIntIni", ArgumentType.LONG){
-//        arg(ArgumentType.STRING, "name")
-//    }
-//
-    function("iniValueFor", ArgumentType.STRING){
-        arg(ArgumentType.STRING, "name")
+    function("iniValueFor", ArgumentType.PHP_STRING){
+        arg(ArgumentType.PHP_STRING, "name")
+    }
+
+    function("printMixedType"){
+        arg(ArgumentType.PHP_MIXED, "value")
     }
 }
 

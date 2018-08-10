@@ -103,15 +103,15 @@ val dsl = extension("example", "0.1") {
     constant("HELLO_ES", "Hola")
     constant("HELLO_RU", "Привет")
 
-    function("hello", ArgumentType.STRING) {
-        arg(ArgumentType.STRING, "name")
-        arg(ArgumentType.STRING, "lang", true)
+    function("hello", ArgumentType.PHP_STRING) {
+        arg(ArgumentType.PHP_STRING, "name")
+        arg(ArgumentType.PHP_STRING, "lang", true)
     }
 
     function("helloWorld")
 
-    function("multiple2", ArgumentType.DOUBLE) {
-        arg(ArgumentType.DOUBLE, "number")
+    function("multiple2", ArgumentType.PHP_DOUBLE) {
+        arg(ArgumentType.PHP_DOUBLE, "number")
     }
 }
 
@@ -162,20 +162,21 @@ extension(name, version){
 ||`value`|`Any`|String, Long (or Int), Double and Boolean will be converted to corresponding PHP types. All other will be silently dropped|
 |`function`|
 ||`name`|`String`|Name of resulting PHP-function. Note that you MUST provide corresponding K/N function with exact same name|
-||`returnType`|`ArgumentType`|Optional return type. By default `ArgumentType.NULL`
+||`returnType`|`ArgumentType`|Optional return type. By default `ArgumentType.PHP_NULL`
 |`arg`|||Note that argument addition order is important. After adding first optional argument, all arguments below MUST be optional
 ||`type`|`ArgumentType`|
 ||`name`|`String`|
 ||`isOptional`|`Boolean`|Optional flag decides that argument is optional. By default `FALSE`
 
 ## enum class ArgumentType
-|ArgumentType|PHP-type|
-|---|---|
-|`STRING`|`string`|
-|`LONG`|`int`|
-|`DOUBLE`|`float`/`double`|
-|`BOOL`|`boolean`|
-|`NULL`|`null`|
+|ArgumentType|PHP-type|note|
+|---|---|---|
+|`PHP_STRING`|`string`||
+|`PHP_LONG`|`int`||
+|`PHP_STRICT_LONG`|`int`|See [description](https://phpinternals.net/docs/z_param_strict_long). Can't be used for return value|
+|`PHP_DOUBLE`|`float`/`double`||
+|`PHP_BOOL`|`boolean`||
+|`PHP_NULL`|`null`||
 
 ## Zend Api macro interop
 Proxy functions for zend api macro located in package `zend.api.proxy`
@@ -185,5 +186,3 @@ Following functions are currently supported
 |macro|proxy function|note|
 |:---|:---|:---|
 |**INI_STR&nbsp;(name)**|**getIniString&nbsp;(name:&nbsp;String):&nbsp;String**|You can retrieve only those INI-settings that described by DSL directives `ini` and `externalIni`|
-
-

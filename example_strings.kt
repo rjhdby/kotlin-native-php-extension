@@ -13,3 +13,5 @@ fun helloWorld(): Boolean {
 fun helloOrNotHello(hello: Boolean) = println(if (hello) "Hello!" else "Nop!")
 
 fun iniValueFor(name:String) = getIniString(name)
+
+fun printMixedType(value:Mixed) = print(getMixedType(value))
