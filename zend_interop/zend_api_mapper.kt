@@ -22,5 +22,5 @@ fun getMixedType(zval: Mixed) = when (zend_helper_get_arg_type(zval).toInt()) {
     IS_CALLABLE -> ArgumentType.PHP_MIXED//todo
     IS_ITERABLE -> ArgumentType.PHP_MIXED//todo
     IS_VOID -> ArgumentType.PHP_MIXED//todo
-    else -> zend_helper_get_arg_type(zval).toInt()
+    else -> ArgumentType.PHP_MIXED
 }

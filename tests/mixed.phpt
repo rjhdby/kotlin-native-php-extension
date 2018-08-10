@@ -4,4 +4,4 @@ printMixedType("test");
 <?php
 printMixedType("test");
 --EXPECT--
-STRING
+PHP_STRING
