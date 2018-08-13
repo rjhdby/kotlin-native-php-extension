@@ -1,4 +1,5 @@
 import php.extension.dsl.*
+import php.extension.share.*
 
 val dsl = extension("example", "0.1") {
     ini("example.count","10")

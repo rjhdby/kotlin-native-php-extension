@@ -4,9 +4,14 @@ PHP_HOME=/opt/rh/rh-php71/root/usr
 PHP_BIN=${PHP_HOME}/bin
 PHP_LIB=${PHP_HOME}/include/php
 
-GENERATOR_FILES=./generator/*.kt
-ZEND_INTEROP_FILES=./zend_interop/*.kt
-ARGUMENT_TYPES=./generator/argument_types.kt
+ROOT=./konfigure
+
+GENERATOR=${ROOT}/generator/*.kt
+ZEND_INTEROP=${ROOT}/proxy/*.kt
+SHARE=${ROOT}/share/*.kt
+DSL=${ROOT}/dsl/*.kt
+
+GENERATOR_FILESET=${SHARE} ${GENERATOR} ${DSL}
 
 OUTPUT=./phpmodule
 
@@ -58,7 +63,7 @@ endif
 
 make_generator:
 ifneq ($(KEXE),$(wildcard $(KEXE)))
-	${KOTLIN_HOME}/kotlinc ./${KEXE_NAME}.kt ${GENERATOR_FILES} -o ${KEXE_NAME}
+	${KOTLIN_HOME}/kotlinc ./${KEXE_NAME}.kt ${GENERATOR_FILESET} -o ${KEXE_NAME}
 else
 	@echo "Skip make_generator"
 endif
@@ -74,7 +79,7 @@ endif
 
 compile:
 ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP_FILES} ${ARGUMENT_TYPES} -l ${KLIB} -o ${LIB_NAME}
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME}
 	mv ./${LIB_NAME}_api.h ${OUTPUT}/
 	mv ./lib${LIB_NAME}.a ${OUTPUT}/
 else

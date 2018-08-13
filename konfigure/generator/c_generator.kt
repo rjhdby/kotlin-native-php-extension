@@ -1,6 +1,7 @@
 package php.extension.generator
 
 import php.extension.dsl.*
+import php.extension.share.*
 
 class CGenerator : FileGenerator {
     override val fileName = "extension.c"

@@ -1,6 +1,7 @@
 package php.extension.dsl
 
-import php.extension.generator.*
+import php.extension.generator.Generator
+import php.extension.share.ArgumentType
 
 fun extension(name: String, version: String, body: Extension.() -> Unit = {}): Extension {
     val ext = Extension(name, version)

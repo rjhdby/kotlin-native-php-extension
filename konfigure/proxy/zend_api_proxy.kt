@@ -1,8 +1,8 @@
-package zend.api.proxy
+package php.extension.proxy
 
 import kotlinx.cinterop.*
 import php.*
-import php.extension.dsl.*
+import php.extension.share.*
 
 typealias Mixed = CPointer<zval>
 

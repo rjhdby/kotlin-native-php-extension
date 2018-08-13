@@ -15,7 +15,7 @@ class IniMappingGenerator : FileGenerator {
     )
 }
 
-const val iniMapperBody = """package zend.api.proxy
+const val iniMapperBody = """package php.extension.proxy
 
 import php.*
 

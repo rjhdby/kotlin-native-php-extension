@@ -1,4 +1,4 @@
-package php.extension.dsl
+package php.extension.share
 
 enum class ArgumentType {
     PHP_STRING, PHP_LONG, PHP_DOUBLE, PHP_BOOL, PHP_NULL, PHP_STRICT_LONG, PHP_MIXED
