@@ -33,9 +33,8 @@ Can't
 ## Files
 
 ```
-./generator/*       Code generator
+./konfigure/*       Code generator, DSL, zend interop classes
 ./tests/*           .phpt tests for example extension
-./zend_interop/*    Zend macro interop classes
 Makefile            Makefile
 extension.kt        Write your DSL of PHP extension here
 example_double.kt   Example extension functions
