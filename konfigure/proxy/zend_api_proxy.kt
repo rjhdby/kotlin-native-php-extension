@@ -7,8 +7,9 @@ import php.extension.share.*
 typealias Mixed = CPointer<zval>
 
 fun getIniString(name: String): String = iniMapping[name]?.invoke()?.toKString() ?: ""
+//fun getIniString(name: String): String = zend_helper_get_ini_string(name.cstr)?.toKString() ?: ""
 
-fun getMixedType(zval: Mixed) = when (zend_helper_get_arg_type(zval).toInt()) {
+fun Mixed.getType() = when (zend_helper_get_arg_type(this).toInt()) {
     IS_LONG -> ArgumentType.PHP_LONG
     IS_DOUBLE -> ArgumentType.PHP_DOUBLE
     IS_STRING -> ArgumentType.PHP_STRING
@@ -24,3 +25,9 @@ fun getMixedType(zval: Mixed) = when (zend_helper_get_arg_type(zval).toInt()) {
     IS_VOID -> ArgumentType.PHP_MIXED//todo
     else -> ArgumentType.PHP_MIXED
 }
+
+fun Mixed.getString() = zend_helper_zval_string(this)?.toKString() ?: ""
+fun Mixed.getDouble() = zend_helper_zval_double(this)
+fun Mixed.getLong() = zend_helper_zval_long(this)
+fun Mixed.getBool() = zend_helper_zval_bool(this) == 1
+

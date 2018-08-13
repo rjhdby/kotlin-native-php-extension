@@ -13,6 +13,16 @@ fun helloWorld(): Boolean {
 
 fun helloOrNotHello(hello: Boolean) = println(if (hello) "Hello!" else "Nop!")
 
-fun iniValueFor(name:String) = getIniString(name)
+fun iniValueFor(name: String) = getIniString(name)
 
-fun printMixedType(value:Mixed) = print(getMixedType(value))
+fun printMixedType(value: Mixed) = print(value.getType())
+
+fun printMixed(value: Mixed) = println(
+        when (value.getType()) {
+            ArgumentType.PHP_LONG -> value.getLong()
+            ArgumentType.PHP_DOUBLE -> value.getDouble()
+            ArgumentType.PHP_STRING -> value.getString()
+            ArgumentType.PHP_BOOL -> value.getBool()
+            else -> "Mixed"
+        }
+)

@@ -1,10 +1,20 @@
 KOTLIN_HOME=/root/kotlin-native-linux-0.7.1/bin
 PHP_HOME=/opt/rh/rh-php71/root/usr
+PHP_LIB_ROOT=${PHP_HOME}/include/php
 
 PHP_BIN=${PHP_HOME}/bin
-PHP_LIB=${PHP_HOME}/include/php
+
+PHP_LIB_INCLUDE=-I${PHP_LIB_ROOT} \
+-I${PHP_LIB_ROOT}/main \
+-I${PHP_LIB_ROOT}/Zend \
+-I${PHP_LIB_ROOT}/TSRM
 
 ROOT=./konfigure
+
+COPT_PHP_LIB_INCLUDE=-copt -I${PHP_LIB_ROOT} \
+-copt -I${PHP_LIB_ROOT}/main \
+-copt -I${PHP_LIB_ROOT}/Zend \
+-copt -I${PHP_LIB_ROOT}/TSRM
 
 GENERATOR=${ROOT}/generator/*.kt
 ZEND_INTEROP=${ROOT}/proxy/*.kt
@@ -33,18 +43,21 @@ ${DEF} \
 ./extension_constants_generated.kt \
 ./extension_ini_mapper_generated.kt \
 ${OUTPUT}/config.m4 \
-${OUTPUT}/extension.c
+${OUTPUT}/extension.c \
+./*.o \
+./*.a
 
-all: prepare kotlin php
+all: kotlin php
 
 prepare:
 	mkdir -p ${OUTPUT}
 	cp -pR ${TESTS} ${OUTPUT}/
 
-kotlin: make_generator generate interop compile
+kotlin: prepare make_generator generate interop compile
 
 php:
 ifeq (${OUTPUT}/config.m4,$(wildcard ${OUTPUT}/config.m4))
+	sleep 1
 	cd ${OUTPUT};phpize
 	cd ${OUTPUT};./configure  --with-php-config=${PHP_BIN}/php-config
 	cd ${OUTPUT};make
@@ -52,11 +65,7 @@ endif
 
 interop:
 ifneq ($(KLIB),$(wildcard $(KLIB)))
-	${KOTLIN_HOME}/cinterop -def ${DEF} -o ${KLIB_NAME} \
--copt -I${PHP_LIB} \
--copt -I${PHP_LIB}/main \
--copt -I${PHP_LIB}/Zend \
--copt -I${PHP_LIB}/TSRM
+	${KOTLIN_HOME}/cinterop -def ${DEF} -o ${KLIB_NAME} ${COPT_PHP_LIB_INCLUDE}
 else
 	@echo "Skip interop"
 endif
@@ -79,7 +88,7 @@ endif
 
 compile:
 ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME}
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME} || true
 	mv ./${LIB_NAME}_api.h ${OUTPUT}/
 	mv ./lib${LIB_NAME}.a ${OUTPUT}/
 else

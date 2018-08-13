@@ -2,8 +2,8 @@ import php.extension.dsl.*
 import php.extension.share.*
 
 val dsl = extension("example", "0.1") {
-    ini("example.count","10")
-    ini("example.name","example")
+    ini("example.count", "10")
+    ini("example.name", "example")
 
     constant("EXAMPLE_WORLD", "World")
     constant("EXAMPLE_LONG", 10L)
@@ -33,11 +33,15 @@ val dsl = extension("example", "0.1") {
         arg(ArgumentType.PHP_BOOL, "hello")
     }
 
-    function("iniValueFor", ArgumentType.PHP_STRING){
+    function("iniValueFor", ArgumentType.PHP_STRING) {
         arg(ArgumentType.PHP_STRING, "name")
     }
 
-    function("printMixedType"){
+    function("printMixedType") {
+        arg(ArgumentType.PHP_MIXED, "value")
+    }
+
+    function("printMixed") {
         arg(ArgumentType.PHP_MIXED, "value")
     }
 }
