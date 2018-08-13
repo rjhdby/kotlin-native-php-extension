@@ -62,7 +62,7 @@ class Constant(val name: String) {
 
     fun setValue(value: Any) {
         when (value) {
-            is String -> {
+            is String       -> {
                 type = ArgumentType.PHP_STRING
                 stringVal = value
             }
@@ -70,24 +70,24 @@ class Constant(val name: String) {
                 type = ArgumentType.PHP_LONG
                 longVal = value as Long
             }
-            is Double -> {
+            is Double       -> {
                 type = ArgumentType.PHP_DOUBLE
                 doubleVal = value
             }
-            is Boolean -> {
+            is Boolean      -> {
                 type = ArgumentType.PHP_BOOL
                 boolVal = value
             }
-            else -> type = ArgumentType.PHP_NULL
+            else            -> type = ArgumentType.PHP_NULL
         }
     }
 
     fun getValue() = when (type) {
         ArgumentType.PHP_STRING -> "\"$stringVal\""
-        ArgumentType.PHP_LONG -> "$longVal"
+        ArgumentType.PHP_LONG   -> "$longVal"
         ArgumentType.PHP_DOUBLE -> "$doubleVal"
-        ArgumentType.PHP_BOOL -> if (boolVal) "1" else "0"
-        else -> ""
+        ArgumentType.PHP_BOOL   -> if (boolVal) "1" else "0"
+        else                    -> ""
     }
 }
 

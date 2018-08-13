@@ -9,11 +9,14 @@ class CGenerator : FileGenerator {
     override fun generate(ext: Extension): String = cFileTemplate.fill(
             "version" to ext.version,
             "extName" to ext.name,
-            "iniEntries" to ext.ini.joinToString("\n") { iniEntry(it) },
+            "iniEntries" to ext.ini.joinIndent() { iniEntry(it) },
+//            "iniEntries" to ext.ini.joinToString("\n") { iniEntry(it) },
             "argInfoBlock" to argInfoBlock(ext),
-            "zendFunctionEntries" to ext.functions.joinToString("\n    ") { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
+            "zendFunctionEntries" to ext.functions.joinIndent(1) { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
+//            "zendFunctionEntries" to ext.functions.joinToString("\n    ") { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
             "constants" to constantsBlock(ext.constants),
-            "funcDefinitionBlock" to ext.functions.joinToString("\n") { funcDefinition(it) }
+            "funcDefinitionBlock" to ext.functions.joinIndent() { funcDefinition(it) }
+//            "funcDefinitionBlock" to ext.functions.joinToString("\n") { funcDefinition(it) }
     )
 
     private fun iniEntry(ini: Ini) = cIniEntry.fill(
@@ -21,13 +24,15 @@ class CGenerator : FileGenerator {
             "default" to ini.default
     )
 
-    private fun argInfoBlock(ext: Extension) = ext.functions.joinToString("\n") {
+    private fun argInfoBlock(ext: Extension) = ext.functions.joinIndent() {
+//    private fun argInfoBlock(ext: Extension) = ext.functions.joinToString("\n") {
         argInfo.fill(
                 "func" to it.name,
                 "optionalsByRef" to "0", //todo
                 "returnByRef" to "0", //todo
                 "mandatoryArgsNum" to it.arguments.filterNot { it.isOptional }.size.toString(),
-                "entries" to it.arguments.joinToString("\n    ") { argInfoEntry(it) }
+//                "entries" to it.arguments.joinToString("\n    ") { argInfoEntry(it) }
+                "entries" to it.arguments.joinIndent(1) { argInfoEntry(it) }
         )
     }
 
@@ -38,7 +43,8 @@ class CGenerator : FileGenerator {
 
     private fun funcDefinition(func: Function) = functionDefinition.fill(
             "name" to func.name,
-            "vars" to func.arguments.joinToString("\n    ") { CTmpl.varDeclaration(it.type, it.name) },
+            "vars" to func.arguments.joinIndent(1) { CTmpl.varDeclaration(it.type, it.name) },
+//            "vars" to func.arguments.joinToString("\n    ") { CTmpl.varDeclaration(it.type, it.name) },
 //            "argsParser" to argsParser(func.arguments),
             "argsParser" to argsParserNew(func.arguments),
             "return" to CTmpl.functionReturn(func.returnType, callString(func))
@@ -47,7 +53,8 @@ class CGenerator : FileGenerator {
     private fun argsParserNew(args: List<Argument>) = argsParserNew.fill(
             "minArgs" to args.filterNot { it.isOptional }.size.toString(),
             "maxArgs" to args.size.toString(),
-            "entries" to args.joinToString("\n        ") { CTmpl.parserArgumentType(it) }
+            "entries" to args.joinIndent(2) { CTmpl.parserArgumentType(it) }
+//            "entries" to args.joinToString("\n        ") { CTmpl.parserArgumentType(it) }
 
     )
 
@@ -57,15 +64,13 @@ class CGenerator : FileGenerator {
     )
 
     private fun callArguments(args: List<Argument>) = args.joinToString(", ") {
-        when (it.type) {
-            ArgumentType.PHP_NULL -> ""
-            else -> "${it.name}"
-        }
+        if (it.type.isNull()) "${it.name}" else ""
     }
 
     private fun constantsBlock(constants: List<Constant>) = constants
             .filterNot { it.type == ArgumentType.PHP_NULL }
-            .joinToString("\n    ") {
+            .joinIndent(1) {
+//            .joinToString("\n    ") {
                 cConstEntry.fill(
                         "type" to CTmpl.constantTypeDefinition(it),
                         "name" to it.name,
@@ -174,19 +179,19 @@ const val argsParserNew = """
 object CTmpl {
     fun varDeclaration(type: ArgumentType, name: String) = when (type) {
         ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "zend_long ${name};"
-        ArgumentType.PHP_DOUBLE -> "double ${name};"
-        ArgumentType.PHP_STRING -> charDeclaration.fill("name" to name)
-        ArgumentType.PHP_BOOL -> "zend_bool ${name};"
-        ArgumentType.PHP_NULL -> ""
-        ArgumentType.PHP_MIXED -> "zval * ${name};"
+        ArgumentType.PHP_DOUBLE                             -> "double ${name};"
+        ArgumentType.PHP_STRING                             -> charDeclaration.fill("name" to name)
+        ArgumentType.PHP_BOOL                               -> "zend_bool ${name};"
+        ArgumentType.PHP_NULL                               -> ""
+        ArgumentType.PHP_MIXED                              -> "zval * ${name};"
     }
 
     fun constantTypeDefinition(const: Constant) = when (const.type) {
-        ArgumentType.PHP_LONG -> "REGISTER_LONG_CONSTANT"
+        ArgumentType.PHP_LONG   -> "REGISTER_LONG_CONSTANT"
         ArgumentType.PHP_DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
         ArgumentType.PHP_STRING -> "REGISTER_STRING_CONSTANT"
-        ArgumentType.PHP_BOOL -> "REGISTER_BOOL_CONSTANT"
-        else -> ""
+        ArgumentType.PHP_BOOL   -> "REGISTER_BOOL_CONSTANT"
+        else                    -> ""
         /* can't use for constants
         ArgumentType.PHP_MIXED
         ArgumentType.PHP_NULL
@@ -195,22 +200,22 @@ object CTmpl {
 
     fun functionReturn(type: ArgumentType, call: String) = when (type) {
         ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "RETURN_LONG(${call});"
-        ArgumentType.PHP_DOUBLE -> "RETURN_DOUBLE(${call});"
-        ArgumentType.PHP_STRING -> "RETURN_STRING(${call});"
-        ArgumentType.PHP_BOOL -> "RETURN_BOOL(${call});"
-        ArgumentType.PHP_NULL -> "${call};\n    RETURN_NULL();"
-        ArgumentType.PHP_MIXED -> "RETURN_ZVAL(${call},1,1);"
+        ArgumentType.PHP_DOUBLE                             -> "RETURN_DOUBLE(${call});"
+        ArgumentType.PHP_STRING                             -> "RETURN_STRING(${call});"
+        ArgumentType.PHP_BOOL                               -> "RETURN_BOOL(${call});"
+        ArgumentType.PHP_NULL                               -> "${call};\n    RETURN_NULL();"
+        ArgumentType.PHP_MIXED                              -> "RETURN_ZVAL(${call},1,1);"
     }
 
     fun parserArgumentType(arg: Argument): String {
         val type = when (arg.type) {
-            ArgumentType.PHP_LONG -> "Z_PARAM_LONG(${arg.name})"
+            ArgumentType.PHP_LONG        -> "Z_PARAM_LONG(${arg.name})"
             ArgumentType.PHP_STRICT_LONG -> "Z_PARAM_STRICT_LONG(${arg.name})"
-            ArgumentType.PHP_DOUBLE -> "Z_PARAM_DOUBLE(${arg.name})"
-            ArgumentType.PHP_STRING -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
-            ArgumentType.PHP_BOOL -> "Z_PARAM_BOOL(${arg.name})"
-            ArgumentType.PHP_MIXED -> "Z_PARAM_ZVAL(${arg.name})"
-            else -> ""
+            ArgumentType.PHP_DOUBLE      -> "Z_PARAM_DOUBLE(${arg.name})"
+            ArgumentType.PHP_STRING      -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
+            ArgumentType.PHP_BOOL        -> "Z_PARAM_BOOL(${arg.name})"
+            ArgumentType.PHP_MIXED       -> "Z_PARAM_ZVAL(${arg.name})"
+            else                         -> ""
             /* can't use argument type
             ArgumentType.PHP_NULL
              */
