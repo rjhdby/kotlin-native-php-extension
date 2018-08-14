@@ -7,7 +7,6 @@ class KtConstGenerator : FileGenerator {
 
     override fun generate(ext: Extension): String = ext.constants
             .joinIndent() {
-//            .joinToString("\n") {
                 ktConstEntry.fill(
                         "name" to it.name,
                         "value" to it.getValue()

@@ -10,13 +10,10 @@ class CGenerator : FileGenerator {
             "version" to ext.version,
             "extName" to ext.name,
             "iniEntries" to ext.ini.joinIndent() { iniEntry(it) },
-//            "iniEntries" to ext.ini.joinToString("\n") { iniEntry(it) },
             "argInfoBlock" to argInfoBlock(ext),
             "zendFunctionEntries" to ext.functions.joinIndent(1) { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
-//            "zendFunctionEntries" to ext.functions.joinToString("\n    ") { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
             "constants" to constantsBlock(ext.constants),
             "funcDefinitionBlock" to ext.functions.joinIndent() { funcDefinition(it) }
-//            "funcDefinitionBlock" to ext.functions.joinToString("\n") { funcDefinition(it) }
     )
 
     private fun iniEntry(ini: Ini) = cIniEntry.fill(
@@ -25,13 +22,11 @@ class CGenerator : FileGenerator {
     )
 
     private fun argInfoBlock(ext: Extension) = ext.functions.joinIndent() {
-        //    private fun argInfoBlock(ext: Extension) = ext.functions.joinToString("\n") {
         argInfo.fill(
                 "func" to it.name,
                 "optionalsByRef" to "0", //todo
                 "returnByRef" to "0", //todo
                 "mandatoryArgsNum" to it.arguments.filterNot { it.isOptional }.size.toString(),
-//                "entries" to it.arguments.joinToString("\n    ") { argInfoEntry(it) }
                 "entries" to it.arguments.joinIndent(1) { argInfoEntry(it) }
         )
     }
@@ -44,8 +39,6 @@ class CGenerator : FileGenerator {
     private fun funcDefinition(func: Function) = functionDefinition.fill(
             "name" to func.name,
             "vars" to func.arguments.joinIndent(1) { CTmpl.varDeclaration(it.type, it.name) },
-//            "vars" to func.arguments.joinToString("\n    ") { CTmpl.varDeclaration(it.type, it.name) },
-//            "argsParser" to argsParser(func.arguments),
             "argsParser" to argsParserNew(func.arguments),
             "return" to CTmpl.functionReturn(func.returnType, callString(func))
     )
@@ -54,8 +47,6 @@ class CGenerator : FileGenerator {
             "minArgs" to args.filterNot { it.isOptional }.size.toString(),
             "maxArgs" to args.size.toString(),
             "entries" to args.joinIndent(2) { CTmpl.parserArgumentType(it) }
-//            "entries" to args.joinToString("\n        ") { CTmpl.parserArgumentType(it) }
-
     )
 
     private fun callString(func: Function) = kotlinFuncCall.fill(
@@ -70,7 +61,6 @@ class CGenerator : FileGenerator {
     private fun constantsBlock(constants: List<Constant>) = constants
             .filterNot { it.type == ArgumentType.PHP_NULL }
             .joinIndent(1) {
-                //            .joinToString("\n    ") {
                 cConstEntry.fill(
                         "type" to CTmpl.constantTypeDefinition(it),
                         "name" to it.name,

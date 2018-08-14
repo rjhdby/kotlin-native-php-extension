@@ -7,7 +7,6 @@ class DefGenerator : FileGenerator {
 
     override fun generate(ext: Extension): String = defFileTemplate.fill(
             "iniHelpers" to ext.ini.joinIndent() {
-//            "iniHelpers" to ext.ini.joinToString("\n") {
                 iniHelper.fill(
                         "macro" to "INI_STR",
                         "ini" to it.name,
