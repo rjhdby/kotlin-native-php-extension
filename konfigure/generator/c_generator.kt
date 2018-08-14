@@ -25,7 +25,7 @@ class CGenerator : FileGenerator {
     )
 
     private fun argInfoBlock(ext: Extension) = ext.functions.joinIndent() {
-//    private fun argInfoBlock(ext: Extension) = ext.functions.joinToString("\n") {
+        //    private fun argInfoBlock(ext: Extension) = ext.functions.joinToString("\n") {
         argInfo.fill(
                 "func" to it.name,
                 "optionalsByRef" to "0", //todo
@@ -64,13 +64,13 @@ class CGenerator : FileGenerator {
     )
 
     private fun callArguments(args: List<Argument>) = args.joinToString(", ") {
-        if (it.type.isNull()) "${it.name}" else ""
+        if (it.type.isNull()) "" else "${it.name}"
     }
 
     private fun constantsBlock(constants: List<Constant>) = constants
             .filterNot { it.type == ArgumentType.PHP_NULL }
             .joinIndent(1) {
-//            .joinToString("\n    ") {
+                //            .joinToString("\n    ") {
                 cConstEntry.fill(
                         "type" to CTmpl.constantTypeDefinition(it),
                         "name" to it.name,
@@ -142,7 +142,7 @@ ZEND_END_ARG_INFO()
 
 const val argInfoEntry = "ZEND_ARG_INFO({passByRef}, {name})"
 
-const val functionEntry = "PHP_FE({name}, NULL)"
+const val functionEntry = "PHP_FE({name}, arginfo_{name})"
 
 const val functionDefinition = """
 PHP_FUNCTION({name}){

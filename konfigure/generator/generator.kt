@@ -35,8 +35,8 @@ fun String.fill(vararg map: Pair<String, String>): String {
     return out
 }
 
-fun ArrayList<T>.joinIndent(indent: Int = 0, transform: (T) -> CharSequence = null) = this.joinToString(
-        separator = "\n",
-        prefix = "    ".repeat(indent),
-        transform = { transform() }
-)
+fun <T> List<T>.joinIndent(indent: Int = 0, transform: (T) -> CharSequence = { it.toString() }) =
+        joinToString(
+                separator = "\n" + "    ".repeat(indent),
+                transform = transform
+        )

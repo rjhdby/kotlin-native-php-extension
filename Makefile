@@ -57,9 +57,13 @@ kotlin: prepare make_generator generate interop compile
 
 php:
 ifeq (${OUTPUT}/config.m4,$(wildcard ${OUTPUT}/config.m4))
+	@echo YES
 	cd ${OUTPUT};phpize
 	cd ${OUTPUT};./configure  --with-php-config=${PHP_BIN}/php-config
 	cd ${OUTPUT};make
+else
+	ls ${OUTPUT}/config.m4
+	@echo $(wildcard ${OUTPUT}/config.m4)
 endif
 
 interop:
@@ -87,8 +91,7 @@ endif
 
 compile:
 ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME} || true
-	sleep 1
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME} 2>&1 || true
 	mv ./${LIB_NAME}_api.h ${OUTPUT}/
 	mv ./lib${LIB_NAME}.a ${OUTPUT}/
 else
@@ -103,8 +106,7 @@ endif
 
 install:
 ifeq ($(OUTPUT)/Makefile,$(wildcard $(OUTPUT)/Makefile))
-	cd ${OUTPUT}
-	make install
+	cd ${OUTPUT};make install
 endif
 
 clean: clean_keep_interop

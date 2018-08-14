@@ -1,7 +1,7 @@
 package php.extension.share
 
 enum class ArgumentType {
-    PHP_STRING, PHP_LONG, PHP_DOUBLE, PHP_BOOL, PHP_NULL, PHP_STRICT_LONG, PHP_MIXED
+    PHP_STRING, PHP_LONG, PHP_DOUBLE, PHP_BOOL, PHP_NULL, PHP_STRICT_LONG, PHP_MIXED;
 
     fun isNull() = this == PHP_NULL
 }
@@ -17,7 +17,7 @@ Callable	f	Z_PARAM_FUNC(zend_fcall_info, zend_fcall_info_cache)
 +Float	d	Z_PARAM_DOUBLE(double)
 +Integer	l	Z_PARAM_LONG(zend_long)
 +Integer	L	Z_PARAM_STRICT_LONG(zend_long)
-Mixed	z	Z_PARAM_ZVAL(zval *)
++Mixed	z	Z_PARAM_ZVAL(zval *)
 Mixed	N/a	Z_PARAM_ZVAL_DEREF(zval *) †
 Object	o	Z_PARAM_OBJECT(zval *)
 Object	O	Z_PARAM_OBJECT_OF_CLASS(zval *, zend_class_entry *)
