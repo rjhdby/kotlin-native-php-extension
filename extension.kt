@@ -44,6 +44,10 @@ val dsl = extension("example", "0.1") {
     function("printMixed") {
         arg(ArgumentType.PHP_MIXED, "value")
     }
+
+    function("printArray") {
+        arg(ArgumentType.PHP_ARRAY, "array")
+    }
 }
 
 fun main(args: Array<String>) = dsl.make()

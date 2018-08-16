@@ -174,6 +174,7 @@ object CTmpl {
         ArgumentType.PHP_BOOL                               -> "zend_bool ${name};"
         ArgumentType.PHP_NULL                               -> ""
         ArgumentType.PHP_MIXED                              -> "zval * ${name};"
+        ArgumentType.PHP_ARRAY                              -> "zval * ${name};"
     }
 
     fun constantTypeDefinition(const: Constant) = when (const.type) {
@@ -185,6 +186,7 @@ object CTmpl {
         /* can't use for constants
         ArgumentType.PHP_MIXED
         ArgumentType.PHP_NULL
+        ArgumentType.PHP_ARRAY    //todo
         */
     }
 
@@ -195,6 +197,7 @@ object CTmpl {
         ArgumentType.PHP_BOOL                               -> "RETURN_BOOL(${call});"
         ArgumentType.PHP_NULL                               -> "${call};\n    RETURN_NULL();"
         ArgumentType.PHP_MIXED                              -> "RETURN_ZVAL(${call},1,1);"
+        ArgumentType.PHP_ARRAY                              -> "RETURN_ZVAL(${call},1,1);"
     }
 
     fun parserArgumentType(arg: Argument): String {
@@ -205,6 +208,7 @@ object CTmpl {
             ArgumentType.PHP_STRING      -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
             ArgumentType.PHP_BOOL        -> "Z_PARAM_BOOL(${arg.name})"
             ArgumentType.PHP_MIXED       -> "Z_PARAM_ZVAL(${arg.name})"
+            ArgumentType.PHP_ARRAY       -> "Z_PARAM_ARRAY(${arg.name})"
             else                         -> ""
             /* can't use argument type
             ArgumentType.PHP_NULL

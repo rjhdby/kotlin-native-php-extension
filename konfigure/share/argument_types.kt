@@ -1,7 +1,14 @@
 package php.extension.share
 
 enum class ArgumentType {
-    PHP_STRING, PHP_LONG, PHP_DOUBLE, PHP_BOOL, PHP_NULL, PHP_STRICT_LONG, PHP_MIXED;
+    PHP_STRING,
+    PHP_LONG,
+    PHP_DOUBLE,
+    PHP_BOOL,
+    PHP_NULL,
+    PHP_STRICT_LONG,
+    PHP_MIXED,
+    PHP_ARRAY;
 
     fun isNull() = this == PHP_NULL
 }
