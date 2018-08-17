@@ -87,7 +87,7 @@ endif
 
 compile:
 ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME} 2>&1 || true
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME}
 	mv ./${LIB_NAME}_api.h ${OUTPUT}/
 	mv ./lib${LIB_NAME}.a ${OUTPUT}/
 else
@@ -115,6 +115,9 @@ ifeq ($(OUTPUT)/Makefile,$(wildcard $(OUTPUT)/Makefile))
 endif
 
 recompile:
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME} 2>&1 || true
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME}
 	mv ./${LIB_NAME}_api.h ${OUTPUT}/
 	mv ./lib${LIB_NAME}.a ${OUTPUT}/
+
+run:
+	${PHP_BIN}/php -dextension=`ls ${OUTPUT}/modules/*.so` -r "${php}"

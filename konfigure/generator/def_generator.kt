@@ -70,11 +70,25 @@ static inline zval* __zp_hash_get_data(HashTable* ht){
 static inline void __zp_hash_reset(HashTable* ht){
     zend_hash_internal_pointer_reset_ex(ht, &(ht)->nInternalPointer);
 }
-
+/*
 static inline void __zp_hash_key(HashTable* ht, zval* key){
     zend_hash_get_current_key_zval_ex(ht, key, &(ht)->nInternalPointer);
 }
+*/
+static inline zval* __zp_hash_key(HashTable* ht){
+    zval * key = malloc(sizeof(zval));
+    zend_hash_get_current_key_zval_ex(ht, key, &(ht)->nInternalPointer);
+    return key;
+}
 
+static inline void __zp_hash_forward(HashTable* ht){
+	zend_hash_move_forward_ex(ht, &(ht)->nInternalPointer);
+}
+/*
+static inline void __zp_hash_keys(HashTable* ht, zend_string **str_index, zend_ulong *num_index){
+    zend_hash_get_current_key(ht,str_index,num_index)
+}
+*/
 {iniHelpers}
 """
 
