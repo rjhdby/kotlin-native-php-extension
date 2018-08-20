@@ -57,7 +57,6 @@ kotlin: prepare make_generator generate interop compile
 
 php:
 	[ -f ${OUTPUT}/config.m4 ] || exit 1
-	@echo YES
 	cd ${OUTPUT};phpize
 	cd ${OUTPUT};./configure --with-php-config=${PHP_BIN}/php-config
 	cd ${OUTPUT};make

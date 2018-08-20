@@ -31,4 +31,15 @@ fun printMixed(value: PhpMixed) = println(
         }
 )
 
-fun printArray(array: PhpMixed) = println(array.asString())
+fun printArray(array: PhpArray) = println(PhpHashTable(array).toString())
+
+fun getArray(array: PhpArray, key: String, value: String): PhpArray {
+    val hash = PhpHashTable(array);
+    hash.put(key.mixed, value.mixed)
+    return hash.hash
+}
+
+//fun makeOperations(){
+//    val arr = PhpArray()
+//    arr.put("")
+//}

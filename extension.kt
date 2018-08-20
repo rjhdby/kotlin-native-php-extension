@@ -48,6 +48,12 @@ val dsl = extension("example", "0.1") {
     function("printArray") {
         arg(ArgumentType.PHP_ARRAY, "array")
     }
+
+    function("getArray", ArgumentType.PHP_ARRAY) {
+        arg(ArgumentType.PHP_ARRAY, "array")
+        arg(ArgumentType.PHP_STRING, "key")
+        arg(ArgumentType.PHP_STRING, "value")
+    }
 }
 
 fun main(args: Array<String>) = dsl.make()
