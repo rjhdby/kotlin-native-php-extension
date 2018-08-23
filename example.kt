@@ -1,6 +1,4 @@
-//stub package for php.h
 import php.*
-//import kotlinx.cinterop.*
 import php.extension.proxy.*
 import php.extension.share.*
 
@@ -8,10 +6,10 @@ fun multiple2(num: Double) = num * 2
 
 fun multiple2long(num: Long) = num * 2
 
-fun hello(name: String, lang: String?) = "${if (lang ?: "" == "") HELLO_EN else lang} $name!!!\n"
+fun hello(name: String=EXAMPLE_WORLD, lang: String = HELLO_EN) = "$lang $name!!!\n"
 
 fun helloWorld(): Boolean {
-    php_printf("Hello %s!!!\n", EXAMPLE_WORLD)   //internal PHP function from "import php.*"
+    php_printf("Hello %s!!!\n", EXAMPLE_WORLD)
     return true;
 }
 
@@ -21,25 +19,21 @@ fun iniValueFor(name: String) = getIniString(name)
 
 fun printMixedType(value: PhpMixed) = print(value.type)
 
-fun printMixed(value: PhpMixed) = println(
-        when (value.type) {
-            ArgumentType.PHP_LONG   -> value.long
-            ArgumentType.PHP_DOUBLE -> value.double
-            ArgumentType.PHP_STRING -> value.string
-            ArgumentType.PHP_BOOL   -> value.bool
-            else                    -> "Mixed"
-        }
-)
+fun printMixed(values: PhpArray) = values.values.map {
+    when (it.type) {
+        ArgumentType.PHP_LONG   -> it.asString()
+        ArgumentType.PHP_DOUBLE -> it.asString()
+        ArgumentType.PHP_STRING -> it.asString()
+        ArgumentType.PHP_BOOL   -> it.asString()
+        ArgumentType.PHP_ARRAY  -> it.asString()
+        ArgumentType.PHP_NULL   -> "null"
+        else                    -> "Mixed"
+    }
+}.forEach(::println)
 
-fun printArray(array: PhpArray) = println(PhpHashTable(array).toString())
+fun printArray(array: PhpArray) = println(array.toString())
 
-fun getArray(array: PhpArray, key: String, value: String): PhpArray {
-    val hash = PhpHashTable(array);
+fun getArray(hash: PhpArray, key: String, value: String): PhpArray {
     hash.put(key.mixed, value.mixed)
-    return hash.hash
+    return hash
 }
-
-//fun makeOperations(){
-//    val arr = PhpArray()
-//    arr.put("")
-//}

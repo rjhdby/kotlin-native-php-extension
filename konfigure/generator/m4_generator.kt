@@ -16,7 +16,7 @@ PHP_ARG_ENABLE({name}, whether to enable {name} support,[ --enable-{name}   Enab
 
 if test "${'$'}PHP_{upperCaseName}" != "no"; then
     PHP_ADD_INCLUDE(.)
-    PHP_ADD_LIBRARY_WITH_PATH(extension_kt, ., {upperCaseName}_SHARED_LIBADD)
+    PHP_ADD_LIBRARY_WITH_PATH({name}, ., {upperCaseName}_SHARED_LIBADD)
     PHP_SUBST({upperCaseName}_SHARED_LIBADD)
     PHP_NEW_EXTENSION({name}, extension.c, ${'$'}ext_shared)
 fi

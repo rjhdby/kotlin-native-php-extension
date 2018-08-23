@@ -4,24 +4,28 @@ import php.extension.dsl.*
 import php.extension.share.*
 
 class CGenerator : FileGenerator {
+    lateinit var ext: Extension
     override val fileName = "extension.c"
 
-    override fun generate(ext: Extension): String = cFileTemplate.fill(
-            "version" to ext.version,
-            "extName" to ext.name,
-            "iniEntries" to ext.ini.joinIndent() { iniEntry(it) },
-            "argInfoBlock" to argInfoBlock(ext),
-            "zendFunctionEntries" to ext.functions.joinIndent(1) { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
-            "constants" to constantsBlock(ext.constants),
-            "funcDefinitionBlock" to ext.functions.joinIndent() { funcDefinition(it) }
-    )
+    override fun generate(ext: Extension): String {
+        this.ext = ext
+        return cFileTemplate.fill(
+                "version" to ext.version,
+                "extName" to ext.name,
+                "iniEntries" to ext.ini.joinIndent { iniEntry(it) },
+                "argInfoBlock" to argInfoBlock(),
+                "zendFunctionEntries" to ext.functions.joinIndent(1) { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
+                "constants" to constantsBlock(ext.constants),
+                "funcDefinitionBlock" to ext.functions.joinIndent { funcDefinition(it) }
+        )
+    }
 
     private fun iniEntry(ini: Ini) = cIniEntry.fill(
             "name" to ini.name,
             "default" to ini.default
     )
 
-    private fun argInfoBlock(ext: Extension) = ext.functions.joinIndent() {
+    private fun argInfoBlock() = ext.functions.joinIndent {
         argInfo.fill(
                 "func" to it.name,
                 "optionalsByRef" to "0", //todo
@@ -38,40 +42,96 @@ class CGenerator : FileGenerator {
 
     private fun funcDefinition(func: Function) = functionDefinition.fill(
             "name" to func.name,
-            "vars" to func.arguments.joinIndent(1) { CTmpl.varDeclaration(it.type, it.name) },
-            "argsParser" to argsParserNew(func.arguments),
-            "return" to CTmpl.functionReturn(func.returnType, callString(func))
+            "vars" to func.arguments.joinIndent(1) { varDeclaration(it.type, it.name) },
+            "argsParser" to argsParser(func.arguments),
+            "return" to functionReturn(func.returnType, callString(func))
     )
 
-    private fun argsParserNew(args: List<Argument>) = argsParserNew.fill(
+    private fun argsParser(args: List<Argument>) = argsParserNew.fill(
             "minArgs" to args.filterNot { it.isOptional }.size.toString(),
             "maxArgs" to args.size.toString(),
-            "entries" to args.joinIndent(2) { CTmpl.parserArgumentType(it) }
+            "entries" to args.joinIndent(2) { parserArgumentType(it) }
     )
 
     private fun callString(func: Function) = kotlinFuncCall.fill(
             "name" to func.name,
-            "args" to callArguments(func.arguments)
+            "args" to callArguments(func.arguments),
+            "extName" to ext.name
     )
 
     private fun callArguments(args: List<Argument>) = args.joinToString(", ") {
-        if (it.type.isNull()) "" else "${it.name}"
+        when {
+            it.type.isNull()                  -> ""
+            it.type == ArgumentType.PHP_ARRAY -> "${ext.name}_symbols()->kotlin.root.php.extension.proxy.hashToArray(${it.name})"
+            else                              -> it.name
+        }
     }
 
     private fun constantsBlock(constants: List<Constant>) = constants
-            .filterNot { it.type == ArgumentType.PHP_NULL }
+            .filterNot { it.type.isNull() }
             .joinIndent(1) {
                 cConstEntry.fill(
-                        "type" to CTmpl.constantTypeDefinition(it),
+                        "type" to constantTypeDefinition(it),
                         "name" to it.name,
                         "value" to it.getValue()
                 )
             }
+
+    private fun varDeclaration(type: ArgumentType, name: String) = when (type) {
+        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "zend_long ${name};"
+        ArgumentType.PHP_DOUBLE                             -> "double ${name};"
+        ArgumentType.PHP_STRING                             -> charDeclaration.fill("name" to name)
+        ArgumentType.PHP_BOOL                               -> "zend_bool ${name};"
+        ArgumentType.PHP_NULL                               -> ""
+        ArgumentType.PHP_MIXED                              -> "zval * ${name};"
+        ArgumentType.PHP_ARRAY                              -> "HashTable * ${name};"
+    }
+
+    private fun constantTypeDefinition(const: Constant) = when (const.type) {
+        ArgumentType.PHP_LONG   -> "REGISTER_LONG_CONSTANT"
+        ArgumentType.PHP_DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
+        ArgumentType.PHP_STRING -> "REGISTER_STRING_CONSTANT"
+        ArgumentType.PHP_BOOL   -> "REGISTER_BOOL_CONSTANT"
+        else                    -> ""
+        /* can't use for constants
+        ArgumentType.PHP_MIXED
+        ArgumentType.PHP_NULL
+        ArgumentType.PHP_ARRAY    //todo
+        */
+    }
+
+    private fun functionReturn(type: ArgumentType, call: String) = when (type) {
+        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "RETURN_LONG(${call});"
+        ArgumentType.PHP_DOUBLE                             -> "RETURN_DOUBLE(${call});"
+        ArgumentType.PHP_STRING                             -> "RETURN_STRING(${call});"
+        ArgumentType.PHP_BOOL                               -> "RETURN_BOOL(${call});"
+        ArgumentType.PHP_NULL                               -> "${call};\n    RETURN_NULL();"
+        ArgumentType.PHP_MIXED                              -> "RETURN_ZVAL(${call},1,1);"
+        ArgumentType.PHP_ARRAY                              -> "RETURN_ARR(${ext.name}_symbols()->kotlin.root.php.extension.proxy.arrayToHashTable(${call}));"
+    }
+
+    private fun parserArgumentType(arg: Argument): String {
+        val type = when (arg.type) {
+            ArgumentType.PHP_LONG        -> "Z_PARAM_LONG(${arg.name})"
+            ArgumentType.PHP_STRICT_LONG -> "Z_PARAM_STRICT_LONG(${arg.name})"
+            ArgumentType.PHP_DOUBLE      -> "Z_PARAM_DOUBLE(${arg.name})"
+            ArgumentType.PHP_STRING      -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
+            ArgumentType.PHP_BOOL        -> "Z_PARAM_BOOL(${arg.name})"
+            ArgumentType.PHP_MIXED       -> "Z_PARAM_ZVAL(${arg.name})"
+            ArgumentType.PHP_ARRAY       -> "Z_PARAM_ARRAY_HT(${arg.name})"
+            else                         -> ""
+            /* can't use argument type
+            ArgumentType.PHP_NULL
+             */
+        }
+
+        return if (arg.firstOptional) "Z_PARAM_OPTIONAL\n    $type" else type
+    }
 }
 
 const val cFileTemplate = """//Autogenerated from extension.kt
 #include "php.h"
-#include "extension_kt_api.h"
+#include "{extName}_api.h"
 
 PHP_INI_BEGIN()
 {iniEntries}
@@ -142,7 +202,7 @@ PHP_FUNCTION({name}){
 }
 """
 
-const val kotlinFuncCall = "extension_kt_symbols()->kotlin.root.{name}({args})"
+const val kotlinFuncCall = "{extName}_symbols()->kotlin.root.{name}({args})"
 
 const val cConstEntry = """{type}("{name}", {value}, CONST_CS|CONST_PERSISTENT);"""
 
@@ -165,56 +225,3 @@ const val argsParserNew = """
         {entries}
     ZEND_PARSE_PARAMETERS_END();
 """
-
-object CTmpl {
-    fun varDeclaration(type: ArgumentType, name: String) = when (type) {
-        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "zend_long ${name};"
-        ArgumentType.PHP_DOUBLE                             -> "double ${name};"
-        ArgumentType.PHP_STRING                             -> charDeclaration.fill("name" to name)
-        ArgumentType.PHP_BOOL                               -> "zend_bool ${name};"
-        ArgumentType.PHP_NULL                               -> ""
-        ArgumentType.PHP_MIXED                              -> "zval * ${name};"
-        ArgumentType.PHP_ARRAY                              -> "zval * ${name};"
-    }
-
-    fun constantTypeDefinition(const: Constant) = when (const.type) {
-        ArgumentType.PHP_LONG   -> "REGISTER_LONG_CONSTANT"
-        ArgumentType.PHP_DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
-        ArgumentType.PHP_STRING -> "REGISTER_STRING_CONSTANT"
-        ArgumentType.PHP_BOOL   -> "REGISTER_BOOL_CONSTANT"
-        else                    -> ""
-        /* can't use for constants
-        ArgumentType.PHP_MIXED
-        ArgumentType.PHP_NULL
-        ArgumentType.PHP_ARRAY    //todo
-        */
-    }
-
-    fun functionReturn(type: ArgumentType, call: String) = when (type) {
-        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "RETURN_LONG(${call});"
-        ArgumentType.PHP_DOUBLE                             -> "RETURN_DOUBLE(${call});"
-        ArgumentType.PHP_STRING                             -> "RETURN_STRING(${call});"
-        ArgumentType.PHP_BOOL                               -> "RETURN_BOOL(${call});"
-        ArgumentType.PHP_NULL                               -> "${call};\n    RETURN_NULL();"
-        ArgumentType.PHP_MIXED                              -> "RETURN_ZVAL(${call},1,1);"
-        ArgumentType.PHP_ARRAY                              -> "RETURN_ARR(${call});"
-    }
-
-    fun parserArgumentType(arg: Argument): String {
-        val type = when (arg.type) {
-            ArgumentType.PHP_LONG        -> "Z_PARAM_LONG(${arg.name})"
-            ArgumentType.PHP_STRICT_LONG -> "Z_PARAM_STRICT_LONG(${arg.name})"
-            ArgumentType.PHP_DOUBLE      -> "Z_PARAM_DOUBLE(${arg.name})"
-            ArgumentType.PHP_STRING      -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
-            ArgumentType.PHP_BOOL        -> "Z_PARAM_BOOL(${arg.name})"
-            ArgumentType.PHP_MIXED       -> "Z_PARAM_ZVAL(${arg.name})"
-            ArgumentType.PHP_ARRAY       -> "Z_PARAM_ARRAY_HT(${arg.name})"
-            else                         -> ""
-            /* can't use argument type
-            ArgumentType.PHP_NULL
-             */
-        }
-
-        return if (arg.firstOptional) "Z_PARAM_OPTIONAL\n    $type" else type
-    }
-}

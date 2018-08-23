@@ -6,7 +6,7 @@ class DefGenerator : FileGenerator {
     override val fileName = "php.def"
 
     override fun generate(ext: Extension): String = defFileTemplate.fill(
-            "iniHelpers" to ext.ini.joinIndent() {
+            "iniHelpers" to ext.ini.joinIndent {
                 iniHelper.fill(
                         "macro" to "INI_STR",
                         "ini" to it.name,
@@ -20,17 +20,23 @@ const val defFileTemplate = """headers = php.h
 
 ---
 
+/*
+ * Get zval type
+ */
 
 static inline zend_uchar __zp_get_arg_type(zval *z_value) {
     return Z_TYPE_P(z_value);
 }
 
+/*
+ * zval to primitive value
+ */
 
 static inline char* __zp_zval_to_string(zval *z_value){
     return Z_STRVAL_P(z_value);
 }
 
-static inline int32_t __zp_zval_to_long(zval *z_value){
+static inline zend_long __zp_zval_to_long(zval *z_value){
     return Z_LVAL_P(z_value);
 }
 
@@ -38,7 +44,7 @@ static inline double __zp_zval_to_double(zval *z_value){
     return Z_DVAL_P(z_value);
 }
 
-static inline int __zp_zval_to_bool(zval *z_value){
+static inline zend_long __zp_zval_to_bool(zval *z_value){
     if(Z_TYPE_P(z_value) == IS_TRUE) {
         return 1;
     } else {
@@ -49,6 +55,10 @@ static inline int __zp_zval_to_bool(zval *z_value){
 static inline HashTable* __zp_zval_to_hashTable(zval *z_value){
     return Z_ARRVAL_P(z_value);
 }
+
+/*
+ * Primitive value to zval
+ */
 
 static inline void __zp_zend_string_to_zval(zval *z_value, zend_string *string){
     ZVAL_STR(z_value, string);
@@ -66,7 +76,7 @@ static inline zval * __zp_string_to_zval(char* value){
     return z_value;
 }
 
-static inline zval * __zp_long_to_zval(int value){
+static inline zval * __zp_long_to_zval(zend_long value){
     zval * z_value = malloc(sizeof(zval));
     ZVAL_LONG(z_value, value);
     return z_value;
@@ -78,7 +88,7 @@ static inline zval * __zp_double_to_zval(double value){
     return z_value;
 }
 
-static inline zval * __zp_bool_to_zval(int value){
+static inline zval * __zp_bool_to_zval(zend_long value){
     zval * z_value = malloc(sizeof(zval));
     ZVAL_BOOL(z_value, value);
     return z_value;
@@ -90,26 +100,36 @@ static inline zval * __zp_hash_table_to_zval(HashTable* value){
     return z_value;
 }
 
+static inline zval * __zp_null_zval(){
+    zval * z_value = malloc(sizeof(zval));
+    ZVAL_NULL(z_value);
+    return z_value;
+}
+
+/*
+ * String to zend_string
+ */
+
 static inline zend_string * __zp_char_to_zend_string(char * value){
     zend_string * z_string;
     return zend_string_init(value, strlen(value), 0);
 }
 
 /*
- * HashTable proxy
+ * HashTable functions
  */
 
-static inline HashTable* __zp_new_hast_table(int size){
+static inline HashTable* __zp_new_hash_table(zend_long size){
     HashTable *hash;
     ALLOC_HASHTABLE(hash);
     zend_hash_init(hash, size, NULL, NULL, 0);
     return hash;
 }
 
-static inline HashTable* __zp_clear_hast_table(HashTable* ht){
+static inline HashTable* __zp_clear_hash_table(HashTable* ht){
     zend_hash_destroy(ht);
     FREE_HASHTABLE(ht);
-    return __zp_new_hast_table(8);
+    return __zp_new_hash_table(8);
 }
 
 static inline zval* __zp_hash_key(HashTable* ht){
@@ -130,23 +150,23 @@ static inline void __zp_hash_forward(HashTable* ht){
 	zend_hash_move_forward_ex(ht, &(ht)->nInternalPointer);
 }
 
-static inline zval* __zp_hash_get_int_key(HashTable* ht, int32_t key){
+static inline zval* __zp_hash_get_int_key(HashTable* ht, zend_long key){
     return zend_hash_index_find(ht, key);
 }
 
-static inline void __zp_hash_remove_int_key(HashTable* ht, int32_t key){
+static inline void __zp_hash_remove_int_key(HashTable* ht, zend_long key){
     zend_hash_index_del(ht, key);
 }
 
-static inline int __zp_hash_has_int_key(HashTable* ht, int32_t key){
+static inline zend_long __zp_hash_has_int_key(HashTable* ht, zend_long key){
     return zend_hash_index_exists(ht, key);
 }
 
-static inline int __zp_hash_update_int_key(HashTable* ht, int32_t key, zval* value){
+static inline zend_long __zp_hash_update_int_key(HashTable* ht, zend_long key, zval* value){
     zend_hash_index_update(ht, key, value);
 }
 
-static inline int __zp_hash_insert(HashTable* ht, zval* value){
+static inline zend_long __zp_hash_insert(HashTable* ht, zval* value){
     zend_hash_next_index_insert(ht, value);
 }
 
@@ -158,13 +178,17 @@ static inline void __zp_hash_remove_string_key(HashTable* ht, char* key){
     zend_hash_del(ht, __zp_char_to_zend_string(key));
 }
 
-static inline int __zp_hash_has_string_key(HashTable* ht, char* key){
+static inline zend_long __zp_hash_has_string_key(HashTable* ht, char* key){
     return zend_hash_exists(ht, __zp_char_to_zend_string(key));
 }
 
-static inline int __zp_hash_update_string_key(HashTable* ht, char* key, zval* value){
+static inline zend_long __zp_hash_update_string_key(HashTable* ht, char* key, zval* value){
     zend_hash_update(ht, __zp_char_to_zend_string(key), value);
 }
+
+/*
+ * Ini proxy
+ */
 
 {iniHelpers}
 """

@@ -29,21 +29,22 @@ TESTS=./tests
 
 SOURCES=`ls ./*.kt | sed 's/.\/extension.kt//g'`
 
-LIB_NAME=extension_kt
 KLIB_NAME=libphp
 KLIB=./${KLIB_NAME}.klib
 KEXE_NAME=extension
 KEXE=./${KEXE_NAME}.kexe
 DEF=./php.def
 
+NAME_HOLDER=./extension.name
+
 ARTEFACTS=${KEXE} \
-${OUTPUT}/${LIB_NAME}_api.h \
-${OUTPUT}/lib${LIB_NAME}.a \
+${OUTPUT}/*.h \
+${OUTPUT}/*.a \
 ${DEF} \
 ./extension_constants_generated.kt \
 ./extension_ini_mapper_generated.kt \
 ${OUTPUT}/config.m4 \
-${OUTPUT}/extension.c \
+${OUTPUT}/*.c \
 ./*.o \
 ./*.a
 
@@ -57,7 +58,7 @@ kotlin: prepare make_generator generate interop compile
 
 php:
 	[ -f ${OUTPUT}/config.m4 ] || exit 1
-	cd ${OUTPUT};phpize
+	cd ${OUTPUT};${PHP_BIN}/phpize
 	cd ${OUTPUT};./configure --with-php-config=${PHP_BIN}/php-config
 	cd ${OUTPUT};make
 
@@ -76,19 +77,15 @@ else
 endif
 
 generate:
-ifneq (${OUTPUT}/config.m4,$(wildcard ${OUTPUT}/config.m4))
-	${KEXE}
+	${KEXE} > ${NAME_HOLDER}
 	mv ./config.m4 ${OUTPUT}/
 	mv ./extension.c ${OUTPUT}/
-else
-	@echo "Skip generating"
-endif
 
 compile:
-ifneq (${OUTPUT}/lib${LIB_NAME}.a,$(wildcard ${OUTPUT}/lib${LIB_NAME}.a))
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME}
-	mv ./${LIB_NAME}_api.h ${OUTPUT}/
-	mv ./lib${LIB_NAME}.a ${OUTPUT}/
+ifneq (${OUTPUT}/lib`cat ${NAME_HOLDER}`.a,$(wildcard ${OUTPUT}/lib`cat ${NAME_HOLDER}`.a))
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o `cat ${NAME_HOLDER}`
+	mv ./`cat ${NAME_HOLDER}`_api.h ${OUTPUT}/
+	mv ./lib`cat ${NAME_HOLDER}`.a ${OUTPUT}/
 else
 	@echo "Skip compiling"
 endif
@@ -114,9 +111,9 @@ ifeq ($(OUTPUT)/Makefile,$(wildcard $(OUTPUT)/Makefile))
 endif
 
 recompile:
-	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o ${LIB_NAME}
-	mv ./${LIB_NAME}_api.h ${OUTPUT}/
-	mv ./lib${LIB_NAME}.a ${OUTPUT}/
+	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o `cat ${NAME_HOLDER}`
+	mv ./`cat ${NAME_HOLDER}`_api.h ${OUTPUT}/
+	mv ./lib`cat ${NAME_HOLDER}`.a ${OUTPUT}/
 
 run:
 	${PHP_BIN}/php -dextension=`ls ${OUTPUT}/modules/*.so` -r "${php}"

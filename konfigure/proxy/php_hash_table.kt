@@ -4,10 +4,9 @@ import kotlinx.cinterop.*
 import php.*
 import php.extension.share.*
 
-class PhpHashTable(var hash: CPointer<HashTable>) : MutableMap<PhpMixed, PhpMixed> {
+class PhpArray(var hash: CPointer<HashTable>) : MutableMap<PhpMixed, PhpMixed> {
 
-    override val size: Int
-        get() = hash.pointed.nNumUsed
+    override val size: Int get() = hash.pointed.nNumUsed
 
     override val entries: MutableSet<MutableMap.MutableEntry<PhpMixed, PhpMixed>>
         get() {
@@ -24,73 +23,106 @@ class PhpHashTable(var hash: CPointer<HashTable>) : MutableMap<PhpMixed, PhpMixe
 
     override val keys: MutableSet<PhpMixed> get() = entries.map { it.key }.toMutableSet()
 
-    val stringKeys: MutableSet<String>
-        get() = keys.map { it.asString() }.toMutableSet()
+    val stringKeys: Set<String> get() = keys.map { it.asString() }.toSet()
 
     override val values: MutableCollection<PhpMixed> = entries.map { it.value }.toMutableList()
 
     companion object {
-        fun fromMixed(array: PhpMixed) = PhpHashTable(__zp_zval_to_hashTable(array)!!)
-
-//        fun fromHashTable(array: CPointer<HashTable>) = PhpHashTable(array)
-
-        fun createEmpty(size: Int = 8) = PhpHashTable(__zp_new_hast_table(size)!!)
+        fun fromMixed(array: PhpMixed) = PhpArray(__zp_zval_to_hashTable(array)!!)
+        fun createEmpty(size: Int = 8) = PhpArray(__zp_new_hash_table(size.toLong())!!)
     }
 
-    val mixed: PhpMixed
-        get() = __zp_hash_table_to_zval(hash)!!
-
     override fun clear() {
-        hash = __zp_clear_hast_table(hash)!!
+        hash = __zp_clear_hash_table(hash)!!
     }
 
     override fun put(key: PhpMixed, value: PhpMixed): PhpMixed? {
         val old = get(key)
         when (key.type) {
-            ArgumentType.PHP_LONG   -> __zp_hash_update_int_key(hash, key.long, value)
-            ArgumentType.PHP_STRING -> __zp_hash_update_string_key(hash, key.string.cstr, value)
+            ArgumentType.PHP_LONG   -> updateIntKey(key.long, value)
+            ArgumentType.PHP_STRING -> updateStringKey(key.string, value)
+            else                    -> zend_error(E_WARNING, "Illegal offset type")
         }
         return old
     }
 
-    fun add(value: PhpMixed) = __zp_hash_insert(hash, value)
+    fun put(key: String, value: PhpMixed) = updateStringKey(key, value)
+
+    fun put(key: Long, value: PhpMixed) = updateIntKey(key, value)
+
+    fun put(value: PhpMixed) = __zp_hash_insert(hash, value)
 
     override fun putAll(from: Map<out PhpMixed, PhpMixed>) = from.forEach { put(it.key, it.value) }
+
+    fun putAll(from: Map<Long, PhpMixed>) = from.forEach { put(it.key, it.value) }
+
+    fun putAll(from: Map<String, PhpMixed>) = from.forEach { put(it.key, it.value) }
+
+    fun putAll(from: List<PhpMixed>) = from.forEach { put(it) }
 
     override fun remove(key: PhpMixed): PhpMixed? {
         val old = get(key)
         when (key.type) {
-            ArgumentType.PHP_LONG   -> __zp_hash_remove_int_key(hash, key.long)
-            ArgumentType.PHP_STRING -> __zp_hash_remove_string_key(hash, key.string.cstr)
+            ArgumentType.PHP_LONG   -> removeIntKey(key.long)
+            ArgumentType.PHP_STRING -> removeStringKey(key.string)
+            else                    -> zend_error(E_WARNING, "Illegal offset type")
         }
         return old
     }
 
-    override fun containsKey(key: PhpMixed): Boolean = if (
-            0 == when (key.type) {
-                ArgumentType.PHP_LONG   -> __zp_hash_has_int_key(hash, key.long)
-                ArgumentType.PHP_STRING -> __zp_hash_has_string_key(hash, key.string.cstr)
-                else                    -> 0
-            }
-    ) false else true
+    fun remove(key: String) = remove(key.mixed)
+
+    fun remove(key: Long) = remove(key.mixed)
+
+    override fun containsKey(key: PhpMixed): Boolean = when (key.type) {
+        ArgumentType.PHP_LONG   -> hasIntKey(key.long)
+        ArgumentType.PHP_STRING -> hasStringKey(key.string)
+        else                    -> 0L
+    } != 0L
+
+    fun containsKey(key: String) = hasStringKey(key)
+
+    fun containsKey(key: Long) = hasIntKey(key)
 
     override fun containsValue(value: PhpMixed): Boolean = values.contains(value)
 
     override fun get(key: PhpMixed): PhpMixed? = when (key.type) {
-        ArgumentType.PHP_LONG   -> __zp_hash_get_int_key(hash, key.long)
-        ArgumentType.PHP_STRING -> __zp_hash_get_string_key(hash, key.string.cstr)
-        else                    -> null
+        ArgumentType.PHP_LONG   -> getIntKey(key.long)
+        ArgumentType.PHP_STRING -> getStringKey(key.string)
+        else                    -> {
+            zend_error(E_WARNING, "Illegal offset type")
+            null
+        }
     }
+
+    fun get(key: String) = getStringKey(key)
+
+    fun get(key: Long) = getIntKey(key)
 
     override fun isEmpty(): Boolean = size == 0
 
+    override fun toString(): String = "[" + entries.joinToString(", ") {
+        "${prettyPrint(it.key)} => ${prettyPrint(it.value)}"
+    } + "]"
+
+    private fun updateStringKey(key: String, value: PhpMixed) = __zp_hash_update_string_key(hash, key.cstr, value)
+
+    private fun updateIntKey(key: Long, value: PhpMixed) = __zp_hash_update_int_key(hash, key, value)
+
+    private fun removeStringKey(key: String) = __zp_hash_remove_string_key(hash, key.cstr)
+
+    private fun removeIntKey(key: Long) = __zp_hash_remove_int_key(hash, key)
+
+    private fun hasStringKey(key: String) = __zp_hash_has_string_key(hash, key.cstr)
+
+    private fun hasIntKey(key: Long) = __zp_hash_has_int_key(hash, key)
+
+    private fun getStringKey(key: String) = __zp_hash_get_string_key(hash, key.cstr)
+
+    private fun getIntKey(key: Long) = __zp_hash_get_int_key(hash, key)
 
     private fun prettyPrint(value: PhpMixed) = when (value.type) {
         ArgumentType.PHP_STRING -> """"${value.asString()}""""
         else                    -> value.asString()
     }
-
-    override fun toString(): String = "[" + entries.joinToString(", ") {
-        "${prettyPrint(it.key)} => ${prettyPrint(it.value)}"
-    } + "]"
 }

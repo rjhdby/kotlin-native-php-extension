@@ -5,7 +5,10 @@ import php.*
 import php.extension.share.*
 
 typealias PhpMixed = CPointer<zval>
-typealias PhpArray = CPointer<HashTable>
+
+fun hashToArray(hash: CPointer<HashTable>) = PhpArray(hash)
+
+fun arrayToHashTable(array: PhpArray) = array.hash
 
 fun getIniString(name: String): String = iniMapping[name]?.invoke()?.toKString() ?: ""
 
@@ -30,11 +33,10 @@ val PhpMixed.type
 val PhpMixed.string get() = __zp_zval_to_string(this)?.toKString() ?: ""
 val PhpMixed.double get() = __zp_zval_to_double(this)
 val PhpMixed.long get() = __zp_zval_to_long(this)
-val PhpMixed.bool get() = __zp_zval_to_bool(this) == 1
-val PhpMixed.array get() = PhpHashTable.fromMixed(this)
+val PhpMixed.bool get() = __zp_zval_to_bool(this) == 1L
+val PhpMixed.array get() = PhpArray.fromMixed(this)
 
-//todo
-//fun PhpMixed.makeNull() =
+fun createPhpNull() = __zp_null_zval()!!
 
 fun PhpMixed.asString() = when (__zp_get_arg_type(this).toInt()) {
     IS_STRING       -> string
@@ -56,8 +58,9 @@ fun PhpMixed.asString() = when (__zp_get_arg_type(this).toInt()) {
 }
 
 val String.mixed get() = __zp_string_to_zval(this.cstr)!!
-val Long.mixed get() = __zp_long_to_zval(this as Int)!!
+val Long.mixed get() = __zp_long_to_zval(this)!!
 val Double.mixed get() = __zp_double_to_zval(this)!!
 val Boolean.mixed get() = __zp_bool_to_zval(if (this == true) 1 else 0)!!
+val PhpArray.mixed get() = __zp_hash_table_to_zval(hash)!!
 
 //fun String.toZendString(): CPointer<zend_string> = zend_string_init(this, this.length.toLong(), 0)!!

@@ -30,8 +30,9 @@ class Extension(val name: String, val version: String) {
         ini.add(Ini(name, default))
     }
 
-    fun make() {
+    fun make(): String {
         Generator(this).generate()
+        return name
     }
 }
 

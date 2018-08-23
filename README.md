@@ -20,15 +20,15 @@ Build script do:
 
 Can
 1. Functions
-2. Supported arguments types: `long(php int)`, `double(php float)`, `string`, `boolean` (and `null` for return value)
-2. Optional arguments
-3. Extension constants
-3. Declare and read INI-entries as String
+2. Supported arguments types: `int`, `float`, `string`, `boolean`, `mixed`, `array`, `null`
+3. Optional arguments
+4. Extension constants
+5. Declare and read INI-entries as String
+6. Call Zend C-functions from Kotlin
 
 Can't
 1. Arguments by reference
-2. Arrays, classes, resources, mixed, callable as arguments or return value
-3. Call PHP API from Kotlin
+2. Classes, resources and callable as arguments or return value
 
 ## Files
 
@@ -167,21 +167,78 @@ extension(name, version){
 ||`name`|`String`|
 ||`isOptional`|`Boolean`|Optional flag decides that argument is optional. By default `FALSE`
 
-## enum class ArgumentType
-|ArgumentType|PHP-type|note|
+## Types
+|ArgumentType|Kotlin type|PHP type|C type|note|
+|---|---|---|---|---|
+|`PHP_STRING`|`String`|`string`|`char*`||
+|`PHP_LONG`|`Long`|`int`|`zend_long`/`int64_t`||
+|`PHP_STRICT_LONG`|`Long`|`int`|`zend_long`/`int64_t`|See [description](https://phpinternals.net/docs/z_param_strict_long). Can't be used for return value|
+|`PHP_DOUBLE`|`Double`|`float`/`double`|`double`||
+|`PHP_BOOL`|`Boolean`|`boolean`|`int`||
+|`PHP_NULL`|`PhpMixed`|`null`|`zval*`||
+|`PHP_MIXED`|`PhpMixed`|`mixed`|`zval*`||
+|`PHP_ARRAY`|`PhpArray`|`array`|`HashTable*`|`PhpArray` is a wrapper class realizing `Map<PhpMixed,PhpMixed>` interface|
+
+## Reference
+
+### Classes
+|Class|Realize|Description|
 |---|---|---|
-|`PHP_STRING`|`string`||
-|`PHP_LONG`|`int`||
-|`PHP_STRICT_LONG`|`int`|See [description](https://phpinternals.net/docs/z_param_strict_long). Can't be used for return value|
-|`PHP_DOUBLE`|`float`/`double`||
-|`PHP_BOOL`|`boolean`||
-|`PHP_NULL`|`null`||
+|`PhpMixed`|`CPointer<zval>`| Type alias for pointer to C-struct `zval`|
+|`PhpArray`| `MutableMap<PhpMixed, PhpMixed>`| Wrapper for C-struct `HashTable`. Represents methods for PHP-array manipulations|
+|`ArgumentType`|enum class|Represents possible PHP-types|
 
-## Zend Api macro interop
-Proxy functions for zend api macro located in package `zend.api.proxy`
+### High order functions
+|Function|Returns|Description|
+|---|---|---|
+|`getIniString(name:String)`|`String`|Returns INI-setting for name. You can retrieve only those INI-settings that described by DSL directives `ini` and `externalIni`|
+|`createPhpNull()`|`PhpMixed`|Returns `PhpMixed` with type NULL|
+|`arrayToHashTable(array: PhpArray)`|`CPointer<HashTable>`|Convert `PhpArray` to pointer to C-struct `HashTable`. Normally you do not need to use this function.|
+|`hashToArray(hash: CPointer<HashTable>)`|`PhpArray`|Convert `PhpArray` to pointer to C-struct `HashTable`. Normally you do not need to use this function.|
 
-Following functions are currently supported
+### Extensions properties
+|Property|Type|Description|
+|---|---|---|
+|`String.mixed`|`PhpMixed`|`PhpMixed` representation of `String`|
+|`Long.mixed`|`PhpMixed`|`PhpMixed` representation of `Long`|
+|`Double.mixed`|`PhpMixed`|`PhpMixed` representation of `Double`|
+|`Boolean.mixed`|`PhpMixed`|`PhpMixed` representation of `Boolean`|
+|`PhpArray.mixed`|`PhpMixed`|`PhpMixed` representation of `PhpArray`|
+|`PhpMixed.string`|`String`|`String` value from `PhpMixed`|
+|`PhpMixed.long`|`Long`|`Long` value from `PhpMixed`|
+|`PhpMixed.double`|`Double`|`Double` value from `PhpMixed`|
+|`PhpMixed.bool`|`Boolean`|`Boolean` value from `PhpMixed`|
+|`PhpMixed.array`|`PhpArray`|`PhpArray` value from `PhpMixed`|
+|`PhpMixed.type`|`ArgumentType`|Corresponding `ArgumentType` for `PhpMixed`|
 
-|macro|proxy function|note|
-|:---|:---|:---|
-|**INI_STR&nbsp;(name)**|**getIniString&nbsp;(name:&nbsp;String):&nbsp;String**|You can retrieve only those INI-settings that described by DSL directives `ini` and `externalIni`|
+### Class `PhpArray`
+`PhpArray` implements interface `MutableMap<PhpMixed, PhpMixed>`. Thus, it contains all the required properties and methods.
+
+#### Non-standard properties and methods
+
+|Property|Type|Description|
+|---|---|---|
+|`hash`|`CPointer<HashTable>`|Pointer to wrapped C-struct `HashTable`|
+|`mixed`|`PhpMixed`|`PhpMixed` representation of `PhpArray`|
+|`stringKeys`|`Set<String>`|Set of keys converted into `String`. Actually in PHP numeric keys is equals to they string representation. Thus, `11` is equals to `"11"`|
+
+|Constructor|Description|
+|---|---|
+|`PhpArray(hash: CPointer<HashTable>)`|Default constructor|
+|`PhpArray.fromMixed(array:PhpMixed)`|Construct `PhpArray` from `PhpMixed`|
+|`PhpArray.createEmpty(size:Int = 8)`|Construct empty `PhpArray` and initialize `hash`|
+
+|Method|Returns|Description|
+|---|---|---|
+|`put(key: String, value: PhpMixed)`|`PhpMixed?`|Returns old value for `key` or `null`|
+|`put(key: Long, value: PhpMixed)`|`PhpMixed?`|Returns old value for `key` or `null`|
+|`put(value: PhpMixed)`|`Unit`|Add element to array with next free numeric index|
+|`putAll(from: Map<Long, PhpMixed>)`|`Unit`|Put all elements with numeric indexes|
+|`putAll(from: Map<String, PhpMixed>)`|`Unit`|Put all elements with string keys|
+|`putAll(from: List<PhpMixed>)`|`Unit`|Sequentially add values by calling `put(value: PhpMixed)`|
+|`remove(key: String)`|`PhpMixed?`|Remove element and returns old value for `key` or `null`|
+|`remove(key: Long)`|`PhpMixed?`|Remove element and returns old value for `key` or `null`|
+|`containsKey(key: String)`|`Boolean`|Whether array contains element with this `key`|
+|`containsKey(key: Long)`|`Boolean`|Whether array contains element with this `key`|
+|`get(key: String)`|`PhpMixed?`|Returns corresponding value or `null`|
+|`get(key: Long)`|`PhpMixed?`|Returns corresponding value or `null`|
