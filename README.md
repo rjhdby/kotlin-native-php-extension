@@ -201,6 +201,7 @@ You MUST provide corresponding Kotlin function for every enabled hook
 |`PhpMixed`|`CPointer<zval>`| Type alias for pointer to C-struct `zval`|
 |`PhpArray`| `MutableMap<PhpMixed, PhpMixed>`| Wrapper for C-struct `HashTable`. Represents methods for PHP-array manipulations|
 |`ArgumentType`|enum class|Represents possible PHP-types|
+|`LifeCycle`|enum class|Represents possible PHP-extension lifecycle hook|
 
 ### High order functions
 |Function|Returns|Description|
