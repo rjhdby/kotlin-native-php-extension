@@ -14,7 +14,10 @@ val dsl = extension("example", "0.1") {
 
     constant("OK_HELLO", true)
 
-    lifeCycleHooks(LifeCycle.MINIT, LifeCycle.RINIT, LifeCycle.MSHUTDOWN, LifeCycle.RSHUTDOWN)
+    /*
+     * Commented because affects every PHP-script
+     */
+    //lifeCycleHooks(LifeCycle.MINIT, LifeCycle.RINIT, LifeCycle.MSHUTDOWN, LifeCycle.RSHUTDOWN)
 
     function("hello", ArgumentType.PHP_STRING) {
         arg(ArgumentType.PHP_STRING, "name")
