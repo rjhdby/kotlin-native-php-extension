@@ -1,7 +1,7 @@
 package php.extension.dsl
 
 import php.extension.generator.Generator
-import php.extension.share.ArgumentType
+import php.extension.share.*
 
 fun extension(name: String, version: String, body: Extension.() -> Unit = {}): Extension {
     val ext = Extension(name, version)
@@ -13,6 +13,7 @@ class Extension(val name: String, val version: String) {
     val functions = ArrayList<Function>()
     val constants = ArrayList<Constant>()
     val ini = ArrayList<Ini>()
+    val lifeCycle = HashSet<LifeCycle>()
 
     fun function(name: String, type: ArgumentType = ArgumentType.PHP_NULL, body: Function.() -> Unit = {}) {
         val function = Function(name, type)
@@ -33,6 +34,10 @@ class Extension(val name: String, val version: String) {
     fun make(): String {
         Generator(this).generate()
         return name
+    }
+
+    fun lifeCycleHooks(vararg func: LifeCycle) {
+        func.forEach { lifeCycle.add(it) }
     }
 }
 

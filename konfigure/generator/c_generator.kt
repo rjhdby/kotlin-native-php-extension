@@ -9,6 +9,7 @@ class CGenerator : FileGenerator {
 
     override fun generate(ext: Extension): String {
         this.ext = ext
+
         return cFileTemplate.fill(
                 "version" to ext.version,
                 "extName" to ext.name,
@@ -16,7 +17,11 @@ class CGenerator : FileGenerator {
                 "argInfoBlock" to argInfoBlock(),
                 "zendFunctionEntries" to ext.functions.joinIndent(1) { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
                 "constants" to constantsBlock(ext.constants),
-                "funcDefinitionBlock" to ext.functions.joinIndent { funcDefinition(it) }
+                "funcDefinitionBlock" to ext.functions.joinIndent { funcDefinition(it) },
+                "minit" to if (ext.lifeCycle.contains(LifeCycle.MINIT)) lifeCycle("minit") else "",
+                "rinit" to if (ext.lifeCycle.contains(LifeCycle.RINIT)) lifeCycle("rinit") else "",
+                "mshutdown" to if (ext.lifeCycle.contains(LifeCycle.MSHUTDOWN)) lifeCycle("mshutdown") else "",
+                "rshutdown" to if (ext.lifeCycle.contains(LifeCycle.RSHUTDOWN)) lifeCycle("rshutdown") else ""
         )
     }
 
@@ -76,6 +81,8 @@ class CGenerator : FileGenerator {
                         "value" to it.getValue()
                 )
             }
+
+    private fun lifeCycle(name: String) = "${ext.name}_symbols()->kotlin.root.${name}();"
 
     private fun varDeclaration(type: ArgumentType, name: String) = when (type) {
         ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "zend_long ${name};"
@@ -139,18 +146,32 @@ PHP_INI_END()
 
 {argInfoBlock}
 
+{funcDefinitionBlock}
+
 PHP_MINIT_FUNCTION({extName})
 {
     REGISTER_INI_ENTRIES();
     {constants}
+    {minit}
     return SUCCESS;
 }
-
-{funcDefinitionBlock}
 
 PHP_MSHUTDOWN_FUNCTION({extName})
 {
     UNREGISTER_INI_ENTRIES();
+    {mshutdown}
+    return SUCCESS;
+}
+
+PHP_RINIT_FUNCTION({extName})
+{
+    {rinit}
+    return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION({extName})
+{
+    {rshutdown}
     return SUCCESS;
 }
 
@@ -171,8 +192,8 @@ zend_module_entry {extName}_module_entry = {
         {extName}_functions,
         PHP_MINIT({extName}),
         PHP_MSHUTDOWN({extName}),
-        NULL,
-        NULL,
+        PHP_RINIT({extName}),
+        PHP_RSHUTDOWN({extName}),
         PHP_MINFO({extName}),
 #if ZEND_MODULE_API_NO >= 20010901
         "{version}",

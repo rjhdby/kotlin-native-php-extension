@@ -13,6 +13,10 @@ enum class ArgumentType {
     fun isNull() = this == PHP_NULL
 }
 
+enum class LifeCycle {
+    MINIT, MSHUTDOWN, RINIT, RSHUTDOWN
+}
+
 /*
 Expecting Type	Old API	New API
 Array	    a	Z_PARAM_ARRAY(zval *)

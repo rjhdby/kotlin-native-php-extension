@@ -6,7 +6,7 @@ fun multiple2(num: Double) = num * 2
 
 fun multiple2long(num: Long) = num * 2
 
-fun hello(name: String=EXAMPLE_WORLD, lang: String = HELLO_EN) = "$lang $name!!!\n"
+fun hello(name: String = EXAMPLE_WORLD, lang: String = HELLO_EN) = "$lang $name!!!\n"
 
 fun helloWorld(): Boolean {
     php_printf("Hello %s!!!\n", EXAMPLE_WORLD)
@@ -37,3 +37,8 @@ fun getArray(hash: PhpArray, key: String, value: String): PhpArray {
     hash.put(key.mixed, value.mixed)
     return hash
 }
+
+fun minit() = println("minit")
+fun rinit() = println("rinit")
+fun mshutdown() = Unit
+fun rshutdown() = println("rshutdown")

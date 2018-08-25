@@ -25,6 +25,7 @@ Can
 4. Extension constants
 5. Declare and read INI-entries as String
 6. Call Zend C-functions from Kotlin
+7. Register lifecycle hooks
 
 Can't
 1. Arguments by reference
@@ -143,6 +144,7 @@ extension(name, version){
         arg(type, name [, isOptional = false])
     }
     ...
+    lifeCycleHooks(hooks...)
 }
 ```
 
@@ -166,6 +168,8 @@ extension(name, version){
 ||`type`|`ArgumentType`|
 ||`name`|`String`|
 ||`isOptional`|`Boolean`|Optional flag decides that argument is optional. By default `FALSE`
+|`lifeCycleHooks`|||Define set of lifecycle hooks, where custom functions will be executed
+||`hooks...`||`vararg` argument. List of `LifeCycle` enums
 
 ## Types
 |ArgumentType|Kotlin type|PHP type|C type|note|
@@ -178,6 +182,16 @@ extension(name, version){
 |`PHP_NULL`|`PhpMixed`|`null`|`zval*`||
 |`PHP_MIXED`|`PhpMixed`|`mixed`|`zval*`||
 |`PHP_ARRAY`|`PhpArray`|`array`|`HashTable*`|`PhpArray` is a wrapper class realizing `Map<PhpMixed,PhpMixed>` interface|
+
+## Hooks
+You MUST provide corresponding Kotlin function for every enabled hook
+
+|LifeCycle|Lifecycle function|Kotlin function|
+|---|---|---|
+|`MINIT`|`module_startup_func`|`minit()`|
+|`MSHUTDOWN`|`module_shutdown_func`|`mshutdown()`|
+|`RINIT`|`request_startup_func`|`rinit()`|
+|`RSHUTDOWN`|`request_shutdown_func`|`rshutdown()`|
 
 ## Reference
 
