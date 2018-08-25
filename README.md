@@ -211,7 +211,7 @@ You MUST provide corresponding Kotlin function for every enabled hook
 |`arrayToHashTable(array: PhpArray)`|`CPointer<HashTable>`|Convert `PhpArray` to pointer to C-struct `HashTable`. Normally you do not need to use this function.|
 |`hashToArray(hash: CPointer<HashTable>)`|`PhpArray`|Convert `PhpArray` to pointer to C-struct `HashTable`. Normally you do not need to use this function.|
 
-### Extensions properties
+### Additional properties
 |Property|Type|Description|
 |---|---|---|
 |`String.mixed`|`PhpMixed`|`PhpMixed` representation of `String`|
