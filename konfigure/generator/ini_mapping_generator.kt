@@ -1,6 +1,7 @@
 package php.extension.generator
 
 import php.extension.dsl.*
+import php.extension.share.*
 
 class IniMappingGenerator : FileGenerator {
     override val fileName = "extension_ini_mapper_generated.kt"

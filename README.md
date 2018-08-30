@@ -20,16 +20,18 @@ Build script do:
 
 Can
 1. Functions
-2. Supported arguments types: `int`, `float`, `string`, `boolean`, `mixed`, `array`, `null`
+2. Supported arguments types: `int`, `float`, `string`, `boolean`, `mixed`, `array`, `null`, `object`
 3. Optional arguments
 4. Extension constants
 5. Declare and read INI-entries as String
 6. Call Zend C-functions from Kotlin
-7. Register lifecycle hooks
+7. Add logic to MINIT, RINIT, MSHUTDOWN and RSHUTDOWN
+8. Define classes with methods, properties and constants
 
 Can't
 1. Arguments by reference
-2. Classes, resources and callable as arguments or return value
+2. Resources and callable as arguments or return value
+
 
 ## Files
 
@@ -37,7 +39,8 @@ Can't
 ./konfigure/*       Code generator, DSL, zend interop classes
 ./tests/*           .phpt tests for example extension
 Makefile            Makefile
-extension.kt        Write your DSL of PHP extension here
+extension.kt        Mandatory. Write your DSL of PHP extension here
+lifecycle.kt        Mandatory. Write your lifecycle hooks here
 example_double.kt   Example extension functions
 example_strings.kt  Example extension functions
 ```
@@ -140,11 +143,26 @@ extension(name, version){
     ...
     constant(name, value)
     ...
-    function(name, returnType){
+    function(name [, returnType = NULL]){
         arg(type, name [, isOptional = false])
+        ...
     }
     ...
-    lifeCycleHooks(hooks...)
+    class(name){
+        constant(name, value)
+        property(name, value){
+            [static()]
+            [private() | protected()]
+        }
+        method(name [, returnType = NULL]){
+            arg(type, name [, isOptional = false])
+            ...
+            [static()]
+            [private() | protected()]
+            [abstract() | final()]
+        }
+    }
+    ...
 }
 ```
 
@@ -168,8 +186,10 @@ extension(name, version){
 ||`type`|`ArgumentType`|
 ||`name`|`String`|
 ||`isOptional`|`Boolean`|Optional flag decides that argument is optional. By default `FALSE`
-|`lifeCycleHooks`|||Define set of lifecycle hooks, where custom functions will be executed
-||`hooks...`||`vararg` argument. List of `LifeCycle` enums
+|`class`|
+||`name`|Name of the class. You must create separate `.kt` file with appropriate methods realization and set `package` to lowercase name of the class. For example, for class `MyClass` you must write `package myclass`
+|`method`|Like a `function`. Additionally you can use functions `static(), private(), protected(), abstract(), final()` for setting modifiers. Note, that first argument of appropriate K/N functions must be `obj:PhpObject`. Do not declare this argument inside DSL.
+|`property`|Like a `constant`. Additionally you can set modifiers by `static()`, `private()` and `protected()` functions.
 
 ## Types
 |ArgumentType|Kotlin type|PHP type|C type|note|
@@ -182,24 +202,26 @@ extension(name, version){
 |`PHP_NULL`|`PhpMixed`|`null`|`zval*`||
 |`PHP_MIXED`|`PhpMixed`|`mixed`|`zval*`||
 |`PHP_ARRAY`|`PhpArray`|`array`|`HashTable*`|`PhpArray` is a wrapper class realizing `Map<PhpMixed,PhpMixed>` interface|
+|`PHP_OBJECT`|`PhpObject`|`object`|`zval*`||
 
 ## Hooks
-You MUST provide corresponding Kotlin function for every enabled hook
+You can provide Kotlin function for following hooks by editing `lifecycle.kt` file
 
-|LifeCycle|Lifecycle function|Kotlin function|
-|---|---|---|
-|`MINIT`|`module_startup_func`|`minit()`|
-|`MSHUTDOWN`|`module_shutdown_func`|`mshutdown()`|
-|`RINIT`|`request_startup_func`|`rinit()`|
-|`RSHUTDOWN`|`request_shutdown_func`|`rshutdown()`|
+|Lifecycle|Kotlin function|
+|---|---|
+|`MINIT`|`minit()`|
+|`MSHUTDOWN`|`mshutdown()`|
+|`RINIT`|`rinit()`|
+|`RSHUTDOWN`|`rshutdown()`|
 
 ## Reference
 
-### Classes
+### Helper classes
 |Class|Realize|Description|
 |---|---|---|
 |`PhpMixed`|`CPointer<zval>`| Type alias for pointer to C-struct `zval`|
 |`PhpArray`| `MutableMap<PhpMixed, PhpMixed>`| Wrapper for C-struct `HashTable`. Represents methods for PHP-array manipulations|
+|`PhpObject`|common class|Wrapper for object manipulation|
 |`ArgumentType`|enum class|Represents possible PHP-types|
 |`LifeCycle`|enum class|Represents possible PHP-extension lifecycle hook|
 
@@ -210,6 +232,8 @@ You MUST provide corresponding Kotlin function for every enabled hook
 |`createPhpNull()`|`PhpMixed`|Returns `PhpMixed` with type NULL|
 |`arrayToHashTable(array: PhpArray)`|`CPointer<HashTable>`|Convert `PhpArray` to pointer to C-struct `HashTable`. Normally you do not need to use this function.|
 |`hashToArray(hash: CPointer<HashTable>)`|`PhpArray`|Convert `PhpArray` to pointer to C-struct `HashTable`. Normally you do not need to use this function.|
+|`phpObj(context: CPointer<zend_class_entry>, obj: PhpMixed)`|`PhpObject`|Provide `PhpObject`. For interop purpose.|
+|`objectToZval(obj: PhpObject)`|`PhpMixed`|Convert `PhpObject` to `PhpMixed`. For interop purpose.|
 
 ### Additional properties
 |Property|Type|Description|
@@ -219,6 +243,7 @@ You MUST provide corresponding Kotlin function for every enabled hook
 |`Double.mixed`|`PhpMixed`|`PhpMixed` representation of `Double`|
 |`Boolean.mixed`|`PhpMixed`|`PhpMixed` representation of `Boolean`|
 |`PhpArray.mixed`|`PhpMixed`|`PhpMixed` representation of `PhpArray`|
+|`PhpObject.mixed`|`PhpMixed`|`PhpMixed` representation of `PhpObject`|
 |`PhpMixed.string`|`String`|`String` value from `PhpMixed`|
 |`PhpMixed.long`|`Long`|`Long` value from `PhpMixed`|
 |`PhpMixed.double`|`Double`|`Double` value from `PhpMixed`|
@@ -257,3 +282,23 @@ You MUST provide corresponding Kotlin function for every enabled hook
 |`containsKey(key: Long)`|`Boolean`|Whether array contains element with this `key`|
 |`get(key: String)`|`PhpMixed?`|Returns corresponding value or `null`|
 |`get(key: Long)`|`PhpMixed?`|Returns corresponding value or `null`|
+
+### Class `PhpObject`
+
+|Property|Type|Description|
+|---|---|---|
+|`context`|`CPointer<zend_class_entry>`|Pointer to appropriate `zend_class_entry`|
+|`obj`|`PhpMixed`|Pointer to object's `zval`|
+
+|Constructor|Description|
+|---|---|
+|`PhpObject(val context: CPointer<zend_class_entry>, val obj: PhpMixed)`|Default constructor|
+
+|Method|Returns|Description|
+|---|---|---|
+|`get(name: String)`|`PhpMixed`|Get property value by name|
+|`set(name: String, value: PhpMixed)`|`Unit`|Set property value by name|
+|`getStatic(name: String)`|`PhpMixed`|Get static property value by name|
+|`setStatic(name: String, value: PhpMixed)`|`Unit`|Set static property value by name|
+|`toString()`|`Unit`|Prints name of the class or "unknown object"|
+

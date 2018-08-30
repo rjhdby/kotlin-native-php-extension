@@ -10,6 +10,10 @@ fun hashToArray(hash: CPointer<HashTable>) = PhpArray(hash)
 
 fun arrayToHashTable(array: PhpArray) = array.hash
 
+fun phpObj(context: CPointer<zend_class_entry>, obj: PhpMixed) = PhpObject(context, obj)
+
+fun objectToZval(obj: PhpObject) = obj.obj
+
 fun getIniString(name: String): String = iniMapping[name]?.invoke()?.toKString() ?: ""
 
 val PhpMixed.type
@@ -20,7 +24,7 @@ val PhpMixed.type
         IS_NULL, IS_UNDEF           -> ArgumentType.PHP_NULL
         IS_FALSE, IS_TRUE, _IS_BOOL -> ArgumentType.PHP_BOOL
         IS_ARRAY                    -> ArgumentType.PHP_ARRAY
-        IS_OBJECT                   -> ArgumentType.PHP_MIXED//todo
+        IS_OBJECT                   -> ArgumentType.PHP_OBJECT
         IS_RESOURCE                 -> ArgumentType.PHP_MIXED//todo
         IS_REFERENCE                -> ArgumentType.PHP_MIXED//todo
         IS_CONSTANT_AST             -> ArgumentType.PHP_MIXED//todo
@@ -35,6 +39,8 @@ val PhpMixed.double get() = __zp_zval_to_double(this)
 val PhpMixed.long get() = __zp_zval_to_long(this)
 val PhpMixed.bool get() = __zp_zval_to_bool(this) == 1L
 val PhpMixed.array get() = PhpArray.fromMixed(this)
+
+//todo object
 
 fun createPhpNull() = __zp_null_zval()!!
 
@@ -62,5 +68,4 @@ val Long.mixed get() = __zp_long_to_zval(this)!!
 val Double.mixed get() = __zp_double_to_zval(this)!!
 val Boolean.mixed get() = __zp_bool_to_zval(if (this == true) 1 else 0)!!
 val PhpArray.mixed get() = __zp_hash_table_to_zval(hash)!!
-
-//fun String.toZendString(): CPointer<zend_string> = zend_string_init(this, this.length.toLong(), 0)!!
+val PhpObject.mixed get() = objectToZval(this)

@@ -1,6 +1,7 @@
 package php.extension.generator
 
 import php.extension.dsl.*
+import php.extension.share.*
 
 class DefGenerator : FileGenerator {
     override val fileName = "php.def"
@@ -60,8 +61,10 @@ static inline HashTable* __zp_zval_to_hashTable(zval *z_value){
  * Primitive value to zval
  */
 
-static inline void __zp_zend_string_to_zval(zval *z_value, zend_string *string){
+static inline zval * __zp_zend_string_to_zval(zend_string *string){
+    zval *z_value = malloc(sizeof(zval));
     ZVAL_STR(z_value, string);
+    return z_value;
 }
 
 static inline void __zp_zend_long_to_zval(zval *z_value, zend_string *string){
@@ -184,6 +187,28 @@ static inline zend_long __zp_hash_has_string_key(HashTable* ht, char* key){
 
 static inline zend_long __zp_hash_update_string_key(HashTable* ht, char* key, zval* value){
     zend_hash_update(ht, __zp_char_to_zend_string(key), value);
+}
+
+/*
+ * Classes
+ */
+
+static inline void setObjectProperty(zend_class_entry *class_entry, zval *obj, char *name, zval *value){
+    zend_update_property(class_entry, obj, name, strlen(name), value);
+}
+
+static inline zval *getObjectProperty(zend_class_entry *class_entry, zval *obj, char *name){
+    zval *rv;
+    return zend_read_property(class_entry, obj, name, strlen(name), 1, &rv);
+}
+
+static inline void setStaticProperty(zend_class_entry *class_entry, char *name, zval *value){
+    zend_update_static_property(class_entry, name, strlen(name), value);
+}
+
+static inline zval *getStaticProperty(zend_class_entry *class_entry, char *name){
+    zval *rv;
+    return zend_read_static_property(class_entry, name, strlen(name), &rv);
 }
 
 /*

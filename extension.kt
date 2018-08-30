@@ -1,5 +1,5 @@
-import php.extension.dsl.*
-import php.extension.share.*
+import php.extension.dsl.extension
+import php.extension.share.ArgumentType
 
 val dsl = extension("example", "0.1") {
     ini("example.count", "10")
@@ -14,10 +14,25 @@ val dsl = extension("example", "0.1") {
 
     constant("OK_HELLO", true)
 
-    /*
-     * Commented because affects every PHP-script
-     */
-    //lifeCycleHooks(LifeCycle.MINIT, LifeCycle.RINIT, LifeCycle.MSHUTDOWN, LifeCycle.RSHUTDOWN)
+    phpClass("ExampleClass") {
+        constant("CLASS_CONSTANT", "Yep!")
+        property("property", 10)
+        property("sProperty", "sProp") {
+            static()
+        }
+        method("helloWorld") {
+            static()
+        }
+        method("multipleProperty", ArgumentType.PHP_MIXED) {
+            arg(ArgumentType.PHP_LONG, "m")
+        }
+
+        method("printStatic")
+
+        method("printObj") {
+            arg(ArgumentType.PHP_OBJECT, "obj")
+        }
+    }
 
     function("hello", ArgumentType.PHP_STRING) {
         arg(ArgumentType.PHP_STRING, "name")

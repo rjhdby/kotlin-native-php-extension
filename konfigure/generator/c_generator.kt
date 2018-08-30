@@ -12,127 +12,18 @@ class CGenerator : FileGenerator {
 
         return cFileTemplate.fill(
                 "version" to ext.version,
-                "extName" to ext.name,
-                "iniEntries" to ext.ini.joinIndent { iniEntry(it) },
-                "argInfoBlock" to argInfoBlock(),
-                "zendFunctionEntries" to ext.functions.joinIndent(1) { functionEntry.fill("name" to it.name) },//TODO NULL to argInfo
-                "constants" to constantsBlock(ext.constants),
-                "funcDefinitionBlock" to ext.functions.joinIndent { funcDefinition(it) },
-                "minit" to if (ext.lifeCycle.contains(LifeCycle.MINIT)) lifeCycle("minit") else "",
-                "rinit" to if (ext.lifeCycle.contains(LifeCycle.RINIT)) lifeCycle("rinit") else "",
-                "mshutdown" to if (ext.lifeCycle.contains(LifeCycle.MSHUTDOWN)) lifeCycle("mshutdown") else "",
-                "rshutdown" to if (ext.lifeCycle.contains(LifeCycle.RSHUTDOWN)) lifeCycle("rshutdown") else ""
+                "iniEntries" to ext.ini.joinIndent { it.cEntry() },
+                "argInfoBlock" to ext.functions.joinIndent { it.cArgInfo() },
+                "functionEntries" to ext.functions.joinIndent(1) { it.cEntry() },//TODO NULL to argInfo
+                "constants" to ext.constants.filterNot { it.type.isNull() }.joinIndent(1) { it.cRegistration() },
+                "funcDefinitionBlock" to ext.functions.joinIndent { it.cRealization() },
+                "classes" to ext.classes.joinIndent { it.cRealization() },
+                "classRegistration" to ext.classes.joinIndent(1) { it.cRegistration() },
+                "classConstants" to ext.classes.joinIndent { it.cConstantsRegistration() },
+                "classProperties" to ext.classes.joinIndent { it.cPropertyRegistration() }
+        ).fill(
+                "extName" to ext.name
         )
-    }
-
-    private fun iniEntry(ini: Ini) = cIniEntry.fill(
-            "name" to ini.name,
-            "default" to ini.default
-    )
-
-    private fun argInfoBlock() = ext.functions.joinIndent {
-        argInfo.fill(
-                "func" to it.name,
-                "optionalsByRef" to "0", //todo
-                "returnByRef" to "0", //todo
-                "mandatoryArgsNum" to it.arguments.filterNot { it.isOptional }.size.toString(),
-                "entries" to it.arguments.joinIndent(1) { argInfoEntry(it) }
-        )
-    }
-
-    private fun argInfoEntry(arg: Argument) = argInfoEntry.fill(
-            "name" to arg.name,
-            "passByRef" to "0" //todo
-    )
-
-    private fun funcDefinition(func: Function) = functionDefinition.fill(
-            "name" to func.name,
-            "vars" to func.arguments.joinIndent(1) { varDeclaration(it.type, it.name) },
-            "argsParser" to argsParser(func.arguments),
-            "return" to functionReturn(func.returnType, callString(func))
-    )
-
-    private fun argsParser(args: List<Argument>) = argsParserNew.fill(
-            "minArgs" to args.filterNot { it.isOptional }.size.toString(),
-            "maxArgs" to args.size.toString(),
-            "entries" to args.joinIndent(2) { parserArgumentType(it) }
-    )
-
-    private fun callString(func: Function) = kotlinFuncCall.fill(
-            "name" to func.name,
-            "args" to callArguments(func.arguments),
-            "extName" to ext.name
-    )
-
-    private fun callArguments(args: List<Argument>) = args.joinToString(", ") {
-        when {
-            it.type.isNull()                  -> ""
-            it.type == ArgumentType.PHP_ARRAY -> "${ext.name}_symbols()->kotlin.root.php.extension.proxy.hashToArray(${it.name})"
-            else                              -> it.name
-        }
-    }
-
-    private fun constantsBlock(constants: List<Constant>) = constants
-            .filterNot { it.type.isNull() }
-            .joinIndent(1) {
-                cConstEntry.fill(
-                        "type" to constantTypeDefinition(it),
-                        "name" to it.name,
-                        "value" to it.getValue()
-                )
-            }
-
-    private fun lifeCycle(name: String) = "${ext.name}_symbols()->kotlin.root.${name}();"
-
-    private fun varDeclaration(type: ArgumentType, name: String) = when (type) {
-        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "zend_long ${name};"
-        ArgumentType.PHP_DOUBLE                             -> "double ${name};"
-        ArgumentType.PHP_STRING                             -> charDeclaration.fill("name" to name)
-        ArgumentType.PHP_BOOL                               -> "zend_bool ${name};"
-        ArgumentType.PHP_NULL                               -> ""
-        ArgumentType.PHP_MIXED                              -> "zval * ${name};"
-        ArgumentType.PHP_ARRAY                              -> "HashTable * ${name};"
-    }
-
-    private fun constantTypeDefinition(const: Constant) = when (const.type) {
-        ArgumentType.PHP_LONG   -> "REGISTER_LONG_CONSTANT"
-        ArgumentType.PHP_DOUBLE -> "REGISTER_DOUBLE_CONSTANT"
-        ArgumentType.PHP_STRING -> "REGISTER_STRING_CONSTANT"
-        ArgumentType.PHP_BOOL   -> "REGISTER_BOOL_CONSTANT"
-        else                    -> ""
-        /* can't use for constants
-        ArgumentType.PHP_MIXED
-        ArgumentType.PHP_NULL
-        ArgumentType.PHP_ARRAY    //todo
-        */
-    }
-
-    private fun functionReturn(type: ArgumentType, call: String) = when (type) {
-        ArgumentType.PHP_STRICT_LONG, ArgumentType.PHP_LONG -> "RETURN_LONG(${call});"
-        ArgumentType.PHP_DOUBLE                             -> "RETURN_DOUBLE(${call});"
-        ArgumentType.PHP_STRING                             -> "RETURN_STRING(${call});"
-        ArgumentType.PHP_BOOL                               -> "RETURN_BOOL(${call});"
-        ArgumentType.PHP_NULL                               -> "${call};\n    RETURN_NULL();"
-        ArgumentType.PHP_MIXED                              -> "RETURN_ZVAL(${call},1,1);"
-        ArgumentType.PHP_ARRAY                              -> "RETURN_ARR(${ext.name}_symbols()->kotlin.root.php.extension.proxy.arrayToHashTable(${call}));"
-    }
-
-    private fun parserArgumentType(arg: Argument): String {
-        val type = when (arg.type) {
-            ArgumentType.PHP_LONG        -> "Z_PARAM_LONG(${arg.name})"
-            ArgumentType.PHP_STRICT_LONG -> "Z_PARAM_STRICT_LONG(${arg.name})"
-            ArgumentType.PHP_DOUBLE      -> "Z_PARAM_DOUBLE(${arg.name})"
-            ArgumentType.PHP_STRING      -> "Z_PARAM_STRING(${arg.name}, ${arg.name}_len)"
-            ArgumentType.PHP_BOOL        -> "Z_PARAM_BOOL(${arg.name})"
-            ArgumentType.PHP_MIXED       -> "Z_PARAM_ZVAL(${arg.name})"
-            ArgumentType.PHP_ARRAY       -> "Z_PARAM_ARRAY_HT(${arg.name})"
-            else                         -> ""
-            /* can't use argument type
-            ArgumentType.PHP_NULL
-             */
-        }
-
-        return if (arg.firstOptional) "Z_PARAM_OPTIONAL\n    $type" else type
     }
 }
 
@@ -148,30 +39,35 @@ PHP_INI_END()
 
 {funcDefinitionBlock}
 
+{classes}
+
 PHP_MINIT_FUNCTION({extName})
 {
     REGISTER_INI_ENTRIES();
     {constants}
-    {minit}
+    {classRegistration}
+    {classConstants}
+    {classProperties}
+    {extName}_symbols()->kotlin.root.minit();
     return SUCCESS;
 }
 
 PHP_MSHUTDOWN_FUNCTION({extName})
 {
     UNREGISTER_INI_ENTRIES();
-    {mshutdown}
+    {extName}_symbols()->kotlin.root.mshutdown();
     return SUCCESS;
 }
 
 PHP_RINIT_FUNCTION({extName})
 {
-    {rinit}
+    {extName}_symbols()->kotlin.root.rinit();
     return SUCCESS;
 }
 
 PHP_RSHUTDOWN_FUNCTION({extName})
 {
-    {rshutdown}
+    {extName}_symbols()->kotlin.root.rshutdown();
     return SUCCESS;
 }
 
@@ -179,9 +75,9 @@ PHP_MINFO_FUNCTION({extName}){
     DISPLAY_INI_ENTRIES();
 }
 
-static zend_function_entry {extName}_functions[] = {
-    {zendFunctionEntries}
-    {NULL,NULL,NULL}
+const zend_function_entry {extName}_functions[] = {
+    {functionEntries}
+    PHP_FE_END
 };
 
 zend_module_entry {extName}_module_entry = {
@@ -203,46 +99,269 @@ zend_module_entry {extName}_module_entry = {
 ZEND_GET_MODULE({extName})
 """
 
-const val cIniEntry = """PHP_INI_ENTRY("{name}", "{default}", PHP_INI_ALL, NULL)"""
-
-const val argInfo = """
-ZEND_BEGIN_ARG_INFO_EX(arginfo_{func}, {optionalsByRef}, {returnByRef}, {mandatoryArgsNum})
-    {entries}
-ZEND_END_ARG_INFO()
-"""
-
-const val argInfoEntry = "ZEND_ARG_INFO({passByRef}, {name})"
-
-const val functionEntry = "PHP_FE({name}, arginfo_{name})"
-
-const val functionDefinition = """
-PHP_FUNCTION({name}){
-    {vars}
-    {argsParser}
-    {return}
-}
-"""
-
-const val kotlinFuncCall = "{extName}_symbols()->kotlin.root.{name}({args})"
-
-const val cConstEntry = """{type}("{name}", {value}, CONST_CS|CONST_PERSISTENT);"""
-
 /*
  * Nikolay Igotti [JB]
  * it’s likely K/N  bug, in `CreateCStringFromString`, combined with different behavior
  * of `strlen` with null arg. Pass “” for now, we will fix it.
  */
-const val charDeclaration = """
-    char *{name} = malloc(1);
-    {name}[0] = '\0';
-    size_t {name}_len=0;
-"""
+fun Argument.cDeclare() = when (type) {
+    ArgumentType.PHP_ARRAY       -> "HashTable * ${name};"
+    ArgumentType.PHP_BOOL        -> "zend_bool ${name};"
+    ArgumentType.PHP_DOUBLE      -> "double ${name};"
+    ArgumentType.PHP_LONG        -> "zend_long ${name};"
+    ArgumentType.PHP_MIXED       -> "zval * ${name};"
+    ArgumentType.PHP_NULL        -> "zval * ${name};"
+    ArgumentType.PHP_STRICT_LONG -> "zend_long ${name};"
+    ArgumentType.PHP_STRING      -> "char *${name} = malloc(1); ${name}[0] = '\\0'; size_t ${name}_len=0;"
+    ArgumentType.PHP_OBJECT      -> "zval * ${name};"
+}
 
-const val charParserArgument = "&{name}, &{name}_len"
-/* ----------------------------------------------------------------------- */
+fun Argument.cParse() = when (type) {
+    ArgumentType.PHP_ARRAY       -> "Z_PARAM_ARRAY_HT(${name})"
+    ArgumentType.PHP_BOOL        -> "Z_PARAM_BOOL(${name})"
+    ArgumentType.PHP_DOUBLE      -> "Z_PARAM_DOUBLE(${name})"
+    ArgumentType.PHP_LONG        -> "Z_PARAM_LONG(${name})"
+    ArgumentType.PHP_MIXED       -> "Z_PARAM_ZVAL(${name})"
+    ArgumentType.PHP_NULL        -> "Z_PARAM_ZVAL(${name})"
+    ArgumentType.PHP_STRICT_LONG -> "Z_PARAM_STRICT_LONG(${name})"
+    ArgumentType.PHP_STRING      -> "Z_PARAM_STRING(${name}, ${name}_len)"
+    ArgumentType.PHP_OBJECT      -> "Z_PARAM_OBJECT(${name})"
+}
 
-const val argsParserNew = """
+fun Argument.cCall() = when (type) {
+    ArgumentType.PHP_ARRAY  -> "{extName}_symbols()->kotlin.root.php.extension.proxy.hashToArray({name})".fill(
+            "extName" to null,
+            "name" to name
+    )
+    ArgumentType.PHP_OBJECT -> "{extName}_symbols()->kotlin.root.php.extension.proxy.phpObj({name}->value.obj->ce, {name})".fill(
+            "extName" to null,
+            "name" to name
+    )
+    else                    -> name
+}
+
+fun ArgumentType.cReturn(call: String) = when (this) {
+    ArgumentType.PHP_ARRAY       -> "RETURN_ARR({extName}_symbols()->kotlin.root.php.extension.proxy.arrayToHashTable({call}));"
+    ArgumentType.PHP_BOOL        -> "RETURN_BOOL({call});"
+    ArgumentType.PHP_DOUBLE      -> "RETURN_DOUBLE({call});"
+    ArgumentType.PHP_LONG        -> "RETURN_LONG({call});"
+    ArgumentType.PHP_MIXED       -> "RETURN_ZVAL({call},1,1);"
+    ArgumentType.PHP_NULL        -> "{call};\n    RETURN_NULL();"
+    ArgumentType.PHP_STRICT_LONG -> "RETURN_LONG({call});"
+    ArgumentType.PHP_STRING      -> "RETURN_STRING({call});"
+    ArgumentType.PHP_OBJECT      -> "RETURN_OBJ({extName}_symbols()->kotlin.root.php.extension.proxy.objectToZval({call}))"
+}.fill(
+        "call" to call,
+        "extName" to null
+)
+
+fun Argument.cArgInfo() = "ZEND_ARG_INFO({passByRef}, {argName})"
+        .fill(
+                "passByRef" to "0",
+                "argName" to name
+        )
+
+fun List<Argument>.cArgParser() = """
     ZEND_PARSE_PARAMETERS_START({minArgs}, {maxArgs})
-        {entries}
+        {mandatoryArgs}
+        Z_PARAM_OPTIONAL
+        {optionalArgs}
     ZEND_PARSE_PARAMETERS_END();
+""".fill(
+        "mandatoryArgs" to filterNot { it.isOptional }.joinIndent(2) { it.cParse() },
+        "optionalArgs" to filter { it.isOptional }.joinIndent(2) { it.cParse() },
+        "minArgs" to filterNot { it.isOptional }.size.toString(),
+        "maxArgs" to size.toString()
+)
+
+fun Ini.cEntry() = """PHP_INI_ENTRY("{iniName}", "{default}", PHP_INI_ALL, NULL)"""
+        .fill(
+                "iniName" to name,
+                "default" to default
+        )
+
+fun ArgumentType.cConstant() = when (this) {
+    ArgumentType.PHP_ARRAY       -> ""
+    ArgumentType.PHP_BOOL        -> "REGISTER_BOOL_CONSTANT"
+    ArgumentType.PHP_DOUBLE      -> "REGISTER_DOUBLE_CONSTANT"
+    ArgumentType.PHP_LONG        -> "REGISTER_LONG_CONSTANT"
+    ArgumentType.PHP_MIXED       -> ""
+    ArgumentType.PHP_NULL        -> ""
+    ArgumentType.PHP_STRICT_LONG -> ""
+    ArgumentType.PHP_STRING      -> "REGISTER_STRING_CONSTANT"
+    ArgumentType.PHP_OBJECT      -> ""
+}
+
+fun ArgumentType.cPropertyDeclare() = when (this) {
+    ArgumentType.PHP_ARRAY       -> "zend_declare_property"
+    ArgumentType.PHP_BOOL        -> "zend_declare_property_bool"
+    ArgumentType.PHP_DOUBLE      -> "zend_declare_property_double"
+    ArgumentType.PHP_LONG        -> "zend_declare_property_long"
+    ArgumentType.PHP_MIXED       -> "zend_declare_property"
+    ArgumentType.PHP_NULL        -> "zend_declare_property_null"
+    ArgumentType.PHP_STRICT_LONG -> "zend_declare_property_long"
+    ArgumentType.PHP_STRING      -> "zend_declare_property_string"
+    ArgumentType.PHP_OBJECT      -> ""
+}
+
+fun ArgumentType.cClassConstant() = when (this) {
+    ArgumentType.PHP_ARRAY       -> "zend_declare_class_constant"
+    ArgumentType.PHP_BOOL        -> "zend_declare_class_constant_bool"
+    ArgumentType.PHP_DOUBLE      -> "zend_declare_class_constant_double"
+    ArgumentType.PHP_LONG        -> "zend_declare_class_constant_long"
+    ArgumentType.PHP_MIXED       -> "zend_declare_class_constant"
+    ArgumentType.PHP_NULL        -> "zend_declare_class_constant_null"
+    ArgumentType.PHP_STRICT_LONG -> "zend_declare_class_constant_long"
+    ArgumentType.PHP_STRING      -> "zend_declare_class_constant_string"
+    ArgumentType.PHP_OBJECT      -> ""
+}
+
+fun Constant.cRegistration() = """{type}("{constName}", {value}, CONST_CS | CONST_PERSISTENT);"""
+        .fill(
+                "type" to type.cConstant(),
+                "constName" to name,
+                "value" to getValue()
+        )
+
+fun PhpClass.cConstantsRegistration() = constants.joinIndent(1) {
+    """{type}({className}_class, "{constName}", strlen("{constName}"), {value});"""
+            .fill(
+                    "className" to this.name,
+                    "type" to it.type.cClassConstant(),
+                    "constName" to it.name,
+                    "value" to it.getValue()
+            )
+}
+
+fun PhpClass.cRealization() = """
+zend_class_entry * {className}_class;
+
+{argInfo}
+
+{methodsRealization}
+
+{methodsEntry}
 """
+        .fill(
+                "argInfo" to methods.joinIndent { it.cArgInfo() },
+                "methodsRealization" to methods.joinIndent { it.cRealization() },
+                "methodsEntry" to cMethodEntry()
+        )
+        .fill(
+                "className" to name,
+                "classNameLowCase" to name.toLowerCase()
+        )
+
+fun Method.cArgInfo() = """
+ZEND_BEGIN_ARG_INFO_EX(arginfo_{className}_{methodName}, {optionalsByRef}, {returnByRef}, {mandatoryArgsNum})
+{entries}
+ZEND_END_ARG_INFO()
+""".fill(
+        "className" to null,
+        "methodName" to name,
+        "optionalsByRef" to "0", //todo
+        "returnByRef" to "0", //todo
+        "mandatoryArgsNum" to arguments.filterNot { it.isOptional }.size.toString(),
+        "entries" to arguments.joinIndent(1) { it.cArgInfo() }
+)
+
+fun Method.cRealization() = """
+PHP_METHOD({className}, {methodName}){
+    {vars}
+
+    {argumentParser}
+
+    {return}
+}
+""".fill(
+        "className" to null,
+        "methodName" to name,
+        "vars" to arguments.joinIndent(1) { it.cDeclare() },
+        "argumentParser" to arguments.cArgParser(),
+        "return" to returnType.cReturn(cCallKotlin())
+)
+
+// Comma before {callArgs} will be inserted on the "fill" stage
+fun Method.cCallKotlin() = """{extName}_symbols()->kotlin.root.{classNameLowCase}.{methodName}(
+    {extName}_symbols()->kotlin.root.php.extension.proxy.phpObj({className}_class, getThis())
+    {comma}{callArgs}
+)"""
+        .fill(
+                "extName" to null,
+                "classNameLowCase" to null,
+                "methodName" to name,
+                "comma" to if (arguments.size == 0) "" else ", ",
+                "callArgs" to arguments.joinToString { it.cCall() }
+        )
+
+// Comma before {default} will be inserted on the "fill" stage depends of type
+fun PhpClass.cPropertyRegistration() = properties.joinIndent(1) {
+    """{propertyDeclareFunc}({className}_class, "{propertyName}", sizeof("{propertyName}") - 1 {default}, {modifiers});"""
+            .fill(
+                    "propertyDeclareFunc" to it.type.cPropertyDeclare(),
+                    "className" to this.name,
+                    "propertyName" to it.name,
+                    "default" to if (it.type.isNull()) "" else ", ${it.getValue()}",
+                    "modifiers" to it.modifiers.joinToString(" | ") { it.zend }
+            )
+}
+
+fun PhpClass.cMethodEntry() = """
+const zend_function_entry {className}_methods[] = {
+    {methods}
+    PHP_FE_END
+};""".fill(
+        "className" to name,
+        "methods" to methods.joinIndent(1) { it.cEntry() }
+
+)
+
+fun Method.cEntry() = when (modifiers.contains(Modifier.PHP_ABSTRACT)) {
+    true -> "PHP_ABSTRACT_ME({className}, {methodName}, arginfo_{className}_{methodName})"
+    else -> "PHP_ME({className}, {methodName}, arginfo_{className}_{methodName}, {modifiers})"
+}.fill(
+        "className" to null,
+        "methodName" to name,
+        "modifiers" to modifiers.joinToString(" | ") { it.zend }
+)
+
+fun PhpClass.cRegistration() = """
+zend_class_entry tmp_{className};
+INIT_CLASS_ENTRY(tmp_{className}, "{className}", {className}_methods);
+{className}_class = zend_register_internal_class(&tmp_{className} TSRMLS_CC);
+""".fill("className" to name)
+
+
+fun Function.cCallKotlin() = "{extName}_symbols()->kotlin.root.{funcName}({callArgs})".fill(
+        "extName" to null,
+        "funcName" to name,
+        "callArgs" to arguments.joinToString { it.cCall() }
+)
+
+
+fun Function.cArgInfo() = """
+ZEND_BEGIN_ARG_INFO_EX(arginfo_{funcName}, {optionalsByRef}, {returnByRef}, {mandatoryArgsNum})
+{entries}
+ZEND_END_ARG_INFO()
+""".fill(
+        "funcName" to name,
+        "optionalsByRef" to "0", //todo
+        "returnByRef" to "0", //todo
+        "mandatoryArgsNum" to arguments.filterNot { it.isOptional }.size.toString(),
+        "entries" to arguments.joinIndent(1) { it.cArgInfo() }
+)
+
+fun Function.cEntry() = "PHP_FE({funcName}, arginfo_{funcName})".fill("funcName" to name)
+
+fun Function.cRealization() = """
+PHP_FUNCTION({funcName}){
+    {vars}
+    {argumentParser}
+    {return}
+}
+""".fill(
+        "funcName" to name,
+        "vars" to arguments.joinIndent(1) { it.cDeclare() },
+        "argumentParser" to arguments.cArgParser(),
+        "return" to returnType.cReturn(cCallKotlin())
+)

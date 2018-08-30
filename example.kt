@@ -37,8 +37,3 @@ fun getArray(hash: PhpArray, key: String, value: String): PhpArray {
     hash.put(key.mixed, value.mixed)
     return hash
 }
-
-fun minit() = println("minit")
-fun rinit() = println("rinit")
-fun mshutdown() = Unit
-fun rshutdown() = println("rshutdown")

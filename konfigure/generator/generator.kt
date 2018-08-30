@@ -2,6 +2,7 @@ package php.extension.generator
 
 import platform.posix.*
 import php.extension.dsl.*
+import php.extension.share.*
 
 //TODO work with zval (array, mixed, resource, object), zend_bool, zend_class_entry, zend_fcall_info
 
@@ -28,15 +29,3 @@ class Generator(val ext: Extension) {
         }
     }
 }
-
-fun String.fill(vararg map: Pair<String, String>): String {
-    var out = this
-    map.forEach { out = out.replace("{${it.first}}", it.second) }
-    return out
-}
-
-fun <T> List<T>.joinIndent(indent: Int = 0, transform: (T) -> CharSequence = { it.toString() }) =
-        joinToString(
-                separator = "\n" + "    ".repeat(indent),
-                transform = transform
-        )

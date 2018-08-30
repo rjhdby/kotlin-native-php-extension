@@ -8,19 +8,25 @@ enum class ArgumentType {
     PHP_NULL,
     PHP_STRICT_LONG,
     PHP_MIXED,
-    PHP_ARRAY;
+    PHP_ARRAY,
+    PHP_OBJECT;
 
     fun isNull() = this == PHP_NULL
 }
 
-enum class LifeCycle {
-    MINIT, MSHUTDOWN, RINIT, RSHUTDOWN
+enum class Modifier(val zend: String) {
+    PHP_PUBLIC("ZEND_ACC_PUBLIC"),
+    PHP_PRIVATE("ZEND_ACC_PRIVATE"),
+    PHP_PROTECTED("ZEND_ACC_PROTECTED"),
+    PHP_FINAL("ZEND_ACC_FINAL"),
+    PHP_STATIC("ZEND_ACC_STATIC"),
+    PHP_ABSTRACT("ZEND_ACC_ABSTRACT")
 }
 
 /*
 Expecting Type	Old API	New API
-Array	    a	Z_PARAM_ARRAY(zval *)
-Array	    h	Z_PARAM_ARRAY_HT(HashTable *)
+-Array	    a	Z_PARAM_ARRAY(zval *)
++Array	    h	Z_PARAM_ARRAY_HT(HashTable *)
 Array or object	A	Z_PARAM_ARRAY_OR_OBJECT(zval * )
 Array or object	H	Z_PARAM_ARRAY_OR_OBJECT_HT(HashTable *)
 +Boolean	b	Z_PARAM_BOOL(zend_bool)

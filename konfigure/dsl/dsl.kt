@@ -1,7 +1,7 @@
 package php.extension.dsl
 
 import php.extension.generator.Generator
-import php.extension.share.*
+import php.extension.share.ArgumentType
 
 fun extension(name: String, version: String, body: Extension.() -> Unit = {}): Extension {
     val ext = Extension(name, version)
@@ -13,7 +13,7 @@ class Extension(val name: String, val version: String) {
     val functions = ArrayList<Function>()
     val constants = ArrayList<Constant>()
     val ini = ArrayList<Ini>()
-    val lifeCycle = HashSet<LifeCycle>()
+    val classes = ArrayList<PhpClass>()
 
     fun function(name: String, type: ArgumentType = ArgumentType.PHP_NULL, body: Function.() -> Unit = {}) {
         val function = Function(name, type)
@@ -22,8 +22,7 @@ class Extension(val name: String, val version: String) {
     }
 
     fun constant(name: String, value: Any) {
-        val constant = Constant(name)
-        constant.setValue(value)
+        val constant = Constant(name, value)
         constants.add(constant)
     }
 
@@ -31,27 +30,15 @@ class Extension(val name: String, val version: String) {
         ini.add(Ini(name, default))
     }
 
+    fun phpClass(name: String, body: PhpClass.() -> Unit = {}) {
+        val phpClass = PhpClass(name)
+        phpClass.body()
+        classes.add(phpClass)
+    }
+
     fun make(): String {
         Generator(this).generate()
         return name
-    }
-
-    fun lifeCycleHooks(vararg func: LifeCycle) {
-        func.forEach { lifeCycle.add(it) }
-    }
-}
-
-class Function(val name: String, val returnType: ArgumentType) {
-    val arguments = ArrayList<Argument>()
-    var hasOptional = false
-
-    fun arg(type: ArgumentType, name: String, optional: Boolean = false) {
-        val arg = Argument(type, name, optional)
-        if (optional && !hasOptional) {
-            hasOptional = true
-            arg.firstOptional = true;
-        }
-        arguments.add(arg)
     }
 }
 
@@ -59,32 +46,36 @@ class Argument(val type: ArgumentType, val name: String, val isOptional: Boolean
     var firstOptional = false;
 }
 
-class Constant(val name: String) {
+open class Constant(val name: String, value: Any) {
     var type: ArgumentType = ArgumentType.PHP_NULL
     private var stringVal: String = ""
     private var longVal: Long = 0L
     private var doubleVal: Double = 0.0
     private var boolVal: Boolean = false
 
-    fun setValue(value: Any) {
+    init {
         when (value) {
-            is String       -> {
+            is String  -> {
                 type = ArgumentType.PHP_STRING
                 stringVal = value
             }
-            is Long, is Int -> {
+            is Long    -> {
                 type = ArgumentType.PHP_LONG
-                longVal = value as Long
+                longVal = value
             }
-            is Double       -> {
+            is Int     -> {
+                type = ArgumentType.PHP_LONG
+                longVal = value.toLong()
+            }
+            is Double  -> {
                 type = ArgumentType.PHP_DOUBLE
                 doubleVal = value
             }
-            is Boolean      -> {
+            is Boolean -> {
                 type = ArgumentType.PHP_BOOL
                 boolVal = value
             }
-            else            -> type = ArgumentType.PHP_NULL
+            else       -> type = ArgumentType.PHP_NULL
         }
     }
 
