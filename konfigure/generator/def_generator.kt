@@ -13,11 +13,14 @@ class DefGenerator : FileGenerator {
                         "ini" to it.name,
                         "niceIni" to it.name.replace('.', '_')
                 )
+            },
+            "constructors" to ext.classes.joinIndent() {
+                constructor.fill("className" to it.name)
             }
     )
 }
 
-const val defFileTemplate = """headers = php.h
+const val defFileTemplate = """headers = php.h extension.h
 
 ---
 
@@ -216,10 +219,33 @@ static inline zval *getStaticProperty(zend_class_entry *class_entry, char *name)
  */
 
 {iniHelpers}
+
+{constructors}
+
+/*
+ *  GC
+ */
+
+static void print_gc_flags(zend_object *obj){
+    printf("getInstance FLAGS %u\n", GC_FLAGS(obj));
+}
+
+static void print_gc_flags_zval(zval *obj){
+    printf("getInstance COUNTED %u\n", Z_OBJ_APPLY_COUNT_P(obj));
+}
 """
 
 const val iniHelper = """
 static inline char* zend_helper_get_ini_{niceIni}() {
     return {macro}("{ini}");
+}
+"""
+
+const val constructor = """
+static inline zval* zend_helper_new_{className}() {
+    zval *obj = malloc(sizeof(zval));
+    object_init_ex(obj, get_{className}_class());
+
+    return obj;
 }
 """

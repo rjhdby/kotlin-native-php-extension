@@ -15,19 +15,22 @@ val dsl = extension("example", "0.1") {
     constant("OK_HELLO", true)
 
     phpClass("ExampleClass") {
+        constructor()
         constant("CLASS_CONSTANT", "Yep!")
-        property("property", 10)
+        property("property", null)
         property("sProperty", "sProp") {
             static()
         }
-        method("helloWorld") {
-            static()
-        }
+
         method("multipleProperty", ArgumentType.PHP_MIXED) {
             arg(ArgumentType.PHP_LONG, "m")
         }
 
         method("printStatic")
+
+        method("getInstance", ArgumentType.PHP_OBJECT) {
+            static()
+        }
 
         method("printObj") {
             arg(ArgumentType.PHP_OBJECT, "obj")

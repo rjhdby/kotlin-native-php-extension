@@ -1,8 +1,15 @@
 package exampleclass
 
+import kotlinx.cinterop.*
 import php.extension.proxy.*
+import php.*
 
-fun helloWorld(obj: PhpObject) = println("Hello World!!!")
+fun getInstance(obj: PhpObject) : PhpObject {
+    val o = newExampleClass().phpObject  //PhpObject
+//    print_gc_flags(o.mixed.pointed!!.value.obj!!)
+//    print_gc_flags_zval(o.mixed)
+    return o
+}
 
 fun multipleProperty(obj: PhpObject, m: Long): PhpMixed {
     var property = obj.get("property").long
@@ -14,3 +21,5 @@ fun multipleProperty(obj: PhpObject, m: Long): PhpMixed {
 fun printStatic(obj: PhpObject) = println(obj.getStatic("sProperty").string)
 
 fun printObj(thisObj: PhpObject, obj: PhpObject) = println(obj.toString())
+
+fun __construct(obj: PhpObject) = obj.set("property", 10L.mixed)

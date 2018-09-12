@@ -27,7 +27,7 @@ fun printMixed(values: PhpArray) = values.values.map {
         ArgumentType.PHP_BOOL   -> it.asString()
         ArgumentType.PHP_ARRAY  -> it.asString()
         ArgumentType.PHP_NULL   -> "null"
-        else                    -> "Mixed"
+        else                    -> "Mixed" //todo remove "else"
     }
 }.forEach(::println)
 

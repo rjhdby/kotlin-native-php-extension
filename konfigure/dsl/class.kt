@@ -14,12 +14,16 @@ class PhpClass(val name: String) {
         methods.add(method)
     }
 
+    fun constructor(body: Function.() -> Unit = {}) {
+        method("__construct", ArgumentType.PHP_NULL, body)
+    }
+
     fun constant(name: String, value: Any) {
         val constant = Constant(name, value)
         constants.add(constant)
     }
 
-    fun property(name: String, value: Any, body: Property.() -> Unit = {}) {
+    fun property(name: String, value: Any?, body: Property.() -> Unit = {}) {
         val property = Property(name, value)
         property.body()
         properties.add(property)
@@ -36,7 +40,7 @@ class PhpClass(val name: String) {
     }
 }
 
-class Property(name: String, value: Any) : Constant(name, value) {
+class Property(name: String, value: Any?) : Constant(name, value) {
     val modifiers = mutableSetOf(Modifier.PHP_PUBLIC)
 
     fun static() = modifiers.add(Modifier.PHP_STATIC)

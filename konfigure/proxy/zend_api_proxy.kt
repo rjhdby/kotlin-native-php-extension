@@ -12,7 +12,9 @@ fun arrayToHashTable(array: PhpArray) = array.hash
 
 fun phpObj(context: CPointer<zend_class_entry>, obj: PhpMixed) = PhpObject(context, obj)
 
-fun objectToZval(obj: PhpObject) = obj.obj
+fun objectToZval(obj: PhpObject) = obj.zval
+
+fun zendObject(obj: PhpObject) = obj.zval.pointed!!.value.obj!!
 
 fun getIniString(name: String): String = iniMapping[name]?.invoke()?.toKString() ?: ""
 
@@ -39,8 +41,7 @@ val PhpMixed.double get() = __zp_zval_to_double(this)
 val PhpMixed.long get() = __zp_zval_to_long(this)
 val PhpMixed.bool get() = __zp_zval_to_bool(this) == 1L
 val PhpMixed.array get() = PhpArray.fromMixed(this)
-
-//todo object
+val PhpMixed.phpObject get() = PhpObject.fromMixed(this)
 
 fun createPhpNull() = __zp_null_zval()!!
 

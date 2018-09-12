@@ -13,11 +13,20 @@ interface FileGenerator {
 
 class Generator(val ext: Extension) {
     fun generate() {
+        check()
         write(M4Generator())
+        write(HGenerator())
         write(KtConstGenerator())
+        write(IniMappingGenerator())
+        ext.classes.forEach {
+            write(KtClassGenerator(it))
+        }
         write(CGenerator())
         write(DefGenerator())
-        write(IniMappingGenerator())
+    }
+
+    fun check() {
+        return Unit
     }
 
     private fun write(generator: FileGenerator) {

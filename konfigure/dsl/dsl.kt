@@ -46,7 +46,7 @@ class Argument(val type: ArgumentType, val name: String, val isOptional: Boolean
     var firstOptional = false;
 }
 
-open class Constant(val name: String, value: Any) {
+open class Constant(val name: String, value: Any?) {
     var type: ArgumentType = ArgumentType.PHP_NULL
     private var stringVal: String = ""
     private var longVal: Long = 0L
@@ -55,6 +55,9 @@ open class Constant(val name: String, value: Any) {
 
     init {
         when (value) {
+            null       -> {
+                type = ArgumentType.PHP_NULL
+            }
             is String  -> {
                 type = ArgumentType.PHP_STRING
                 stringVal = value
@@ -80,11 +83,15 @@ open class Constant(val name: String, value: Any) {
     }
 
     fun getValue() = when (type) {
-        ArgumentType.PHP_STRING -> "\"$stringVal\""
-        ArgumentType.PHP_LONG   -> "$longVal"
-        ArgumentType.PHP_DOUBLE -> "$doubleVal"
-        ArgumentType.PHP_BOOL   -> if (boolVal) "1" else "0"
-        else                    -> ""
+        ArgumentType.PHP_STRING      -> "\"$stringVal\""
+        ArgumentType.PHP_LONG        -> "$longVal"
+        ArgumentType.PHP_STRICT_LONG -> "$longVal"
+        ArgumentType.PHP_DOUBLE      -> "$doubleVal"
+        ArgumentType.PHP_BOOL        -> if (boolVal) "1" else "0"
+        ArgumentType.PHP_NULL        -> ""
+        ArgumentType.PHP_MIXED       -> ""
+        ArgumentType.PHP_ARRAY       -> ""
+        ArgumentType.PHP_OBJECT      -> ""
     }
 }
 

@@ -2,6 +2,9 @@ KOTLIN_HOME=/root/kotlin-native-linux-0.7.1/bin
 PHP_HOME=/opt/rh/rh-php71/root/usr
 PHP_LIB_ROOT=${PHP_HOME}/include/php
 
+OUTPUT=./phpmodule
+TESTS=./tests
+
 PHP_BIN=${PHP_HOME}/bin
 
 PHP_LIB_INCLUDE=-I${PHP_LIB_ROOT} \
@@ -14,7 +17,9 @@ ROOT=./konfigure
 COPT_PHP_LIB_INCLUDE=-copt -I${PHP_LIB_ROOT} \
 -copt -I${PHP_LIB_ROOT}/main \
 -copt -I${PHP_LIB_ROOT}/Zend \
--copt -I${PHP_LIB_ROOT}/TSRM
+-copt -I${PHP_LIB_ROOT}/TSRM \
+-copt -I${OUTPUT} \
+-copt -I./
 
 GENERATOR=${ROOT}/generator/*.kt
 ZEND_INTEROP=${ROOT}/proxy/*.kt
@@ -23,9 +28,7 @@ DSL=${ROOT}/dsl/*.kt
 
 GENERATOR_FILESET=${SHARE} ${GENERATOR} ${DSL}
 
-OUTPUT=./phpmodule
 
-TESTS=./tests
 
 SOURCES=`ls ./*.kt | sed 's/.\/extension.kt//g'`
 
@@ -84,8 +87,8 @@ generate:
 compile:
 ifneq (${OUTPUT}/lib`cat ${NAME_HOLDER}`.a,$(wildcard ${OUTPUT}/lib`cat ${NAME_HOLDER}`.a))
 	${KOTLIN_HOME}/kotlinc -opt -produce static ${SOURCES} ${ZEND_INTEROP} ${SHARE} -l ${KLIB} -o `cat ${NAME_HOLDER}`
-	mv ./`cat ${NAME_HOLDER}`_api.h ${OUTPUT}/
-	mv ./lib`cat ${NAME_HOLDER}`.a ${OUTPUT}/
+	mv ./*.h ${OUTPUT}/
+	mv ./*.a ${OUTPUT}/
 else
 	@echo "Skip compiling"
 endif
