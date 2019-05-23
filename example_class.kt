@@ -6,8 +6,8 @@ import php.*
 
 fun getInstance(obj: PhpObject) : PhpObject {
     val o = newExampleClass().phpObject  //PhpObject
-//    print_gc_flags(o.mixed.pointed!!.value.obj!!)
-//    print_gc_flags_zval(o.mixed)
+    print_gc_flags(o.mixed.pointed!!.value.obj!!)
+    print_gc_flags_zval(o.mixed)
     return o
 }
 
